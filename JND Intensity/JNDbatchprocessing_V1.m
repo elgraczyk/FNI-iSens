@@ -12,7 +12,7 @@ cd(PathName);
 
 %Initialize structure to store all analyzed data in
 alldata=[];
-summary_head={'SID','contact','date','discrim_type','ref','p1','p2','p3','p4','p5','MSE','Rsquared','JND','PSS'};
+summary_head={'SID','contact','date','discrim_type','ref','p1','p2','p3','p4','p5','MSE','Rsquared','JND','PSS','subj_bias'};
 summary_data=[];
 
 %Initialize figures and axes for group plots
@@ -211,7 +211,7 @@ for k=1:length(datafiles)
     alldata.(expname).elec=elec;
     summary_data(k,5)=ref;
     
-    save('alldata_intensityJND_test.mat','alldata')
+    save('formatted_data_intensityJND.mat','alldata')
     
     %% Curve fitting
     
@@ -287,6 +287,7 @@ for k=1:length(datafiles)
         summary_data(k,13)=NaN;
     end
     summary_data(k,14)=gompfxn(50,p');
+    summary_data(k,15)=teststrongperc(5);
     
     %% Plotting
     xfit=[-100:0.1:100];
@@ -352,9 +353,151 @@ for k=1:length(datafiles)
         end
     end
 end
+% set(get(get(p1,'Annotation'),'LegendInformation'),'IconDisplayStyle',tmp)
 legend(h1,leg1,'Location','NorthWest')
 legend(h2,leg2,'Location','SouthEast')
 legend(h3,leg3,'Location','SouthEast')
 legend(h4,leg4,'Location','SouthEast')
 
+%Plot metrics
+% f50grp=find(and(summary_data(:,4)==1,summary_data(:,5)==50));
+% f100grp=find(and(summary_data(:,4)==1,summary_data(:,5)==100))
+% pwgrp=find(summary_data(:,4)==2);
+
+sort_data=sortrows(summary_data,[3 2 4 5]);
+ddate=cat(1,sort_data(2:end,3)-sort_data(1:(end-1),3),0);
+delec=cat(1,abs(sort_data(2:end,2)-sort_data(1:(end-1),2)),0);
+
+c1=1;
+barticks={['S' num2str(sort_data(1,1)) ' M' num2str(sort_data(1,2)) ' ' num2str(sort_data(1,3))]};
+
+for k=1:size(sort_data,1)
+    if sort_data(k,4)==1 %freq
+        if sort_data(k,5)==50 %col 1
+            f50grp(c1,1)=sort_data(k,13);
+        elseif sort_data(k,5)==100
+            f100grp(c1,1)=sort_data(k,13);
+        end
+    elseif sort_data(k,4)==2 %pw
+        pwgrp(c1,1)=sort_data(k,13);
+    end
+    if (ddate(k)>0 || delec(k)>0)
+        c1=c1+1;
+        barticks=cat(2,barticks,['S' num2str(sort_data(k,1)) ' M' num2str(sort_data(k,2)) ' ' num2str(sort_data(k,3))]);
+%         barticks=cat(2,barticks,sprintf('S%d M%d\n%d',sort_data(k,1),sort_data(k,1),sort_data(k,3)));
+    end
+end
+
+f50grp(length(f50grp)+1:c1)=0;
+f100grp(length(f100grp)+1:c1)=0;
+pwgrp(length(pwgrp)+1:c1)=0;
+bar_data=cat(2,f50grp, f100grp, pwgrp);
+
+
+figure
+bar(bar_data,'grouped')
+set(gca,'XTickLabel',barticks)
+ylabel('Weber Fraction', 'FontSize', 14)
+legend('Freq discrimination, 50 Hz reference','Freq discrimination, 100 Hz reference','PW discrimination')
+
+%Save everything
+save('all_data_intensityJND.mat','alldata','summary_head','summary_data','bar_data','sort_data')
 cd(defaultpath);
+
+%% analyze indentation matching data
+clear all
+defaultpath=pwd;
+cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
+
+datafiles={};
+[datafiles, pathname]=uigetfile('*.mat','Pick the indentation analysis files','MultiSelect','on');
+cd(pathname)
+q1=1;
+q2=1;
+f1=figure; %S102
+f2=figure; %S104
+h1=axes('Parent',f1);
+h2=axes('Parent',f2);
+
+allmdls=[];
+ind_match_data=[];
+
+col=[0 0 1; 0 1 0; 1 0 0; 0.7 0 1; 0 0 0; 1 0 1];
+leg1txt={};
+leg2txt={};
+
+for i=1:length(datafiles)
+    clear avg_data data
+    load(datafiles{i});
+    SID=datafiles{i}(4:6);
+    elec=datafiles{i}(8);
+    type=datafiles{i}(9);
+    %save
+    ind_match_data.(['S' SID]).(['M' elec]).data=avg_data;
+    
+    if strcmp(type,'F')==1
+        yrange=max(data(:,2));
+        normdata=100*avg_data(:,2)/yrange;
+        ind_match_data.(['S' SID]).(['M' elec]).scaled=cat(2,avg_data(:,1),normdata);
+        axes(h1)
+        
+        allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(avg_data(:,1),avg_data(:,2));
+        t=dataset2cell(allmdls.(['s' SID]).(['M' elec]).Coefficients(:,1));
+        p=cell2mat(t(2:end,2));
+        xfit=[0:0.1:180];
+        yfit=p(1)+p(2).*xfit;
+        
+        hold on
+        scatter(h1,avg_data(:,1), avg_data(:,2),40,col(q1,:));
+%         scatter(h1,avg_data(:,1), normdata,40,col(q1,:));
+        plot(h1,xfit,yfit,'Color',col(q1,:));
+        hold off
+        leg1txt=cat(2,leg1txt,[SID ' M' elec]);
+        leg1txt=cat(2,leg1txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted)]);
+        q1=q1+1;
+    elseif strcmp(type,'P')==1
+        pwrange=max(avg_data(:,1))-min(avg_data(:,1));
+        temp=100*(avg_data(:,1)-min(avg_data(:,1)))/pwrange;
+        yrange=max(data(:,2));
+        normdata=100*avg_data(:,2)/yrange;
+        ind_match_data.(['S' SID]).(['M' elec]).scaled=cat(2,temp,normdata);
+        axes(h2)
+        
+        allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(temp,avg_data(:,2));
+        t=dataset2cell(allmdls.(['s' SID]).(['M' elec]).Coefficients(:,1));
+        p=cell2mat(t(2:end,2));
+        xfit=[0:0.1:100];
+        yfit=p(1)+p(2).*xfit;
+        
+        hold on
+        scatter(h2,temp, avg_data(:,2),40,col(q2,:));
+%         scatter(h2,temp, normdata,40,col(q2,:));
+        plot(h2,xfit,yfit,'Color',col(q2,:));
+        hold off
+        leg2txt=cat(2,leg2txt,[SID ' M' elec]);
+        leg2txt=cat(2,leg2txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted)]);
+        q2=q2+1;
+    end
+    xlabel(h1,'Frequency (Hz)','FontSize',14)
+%     ylabel(h1,'Normalized Indentation Depth (um)')
+    ylabel(h1,'Indentation Depth (um)','FontSize',14)
+   
+    xlabel(h2,'PW, Percentage of PW range (%us)','FontSize',14)
+%     ylabel(h2,'Normalized Indentation Depth (um)')
+    ylabel(h2,'Indentation Depth (um)','FontSize',14)
+    
+    
+%     elseif str2num(SID)==104
+%         scatter(avg_data(:,1), avg_data(:,2),40,col(q2,:));
+%         q2=q2+1;
+%     end
+end
+ 
+ title(h1,'Indentation Matching, Frequency','FontSize',16);
+ title(h2,'Indentation Matching, PW','FontSize',16);
+ legend(h1,leg1txt,'Location','NorthWest');   
+ legend(h2,leg2txt,'Location','NorthWest');
+ 
+ save('all_indmatch_data.mat','allmdls','ind_match_data')
+ 
+ clear all
