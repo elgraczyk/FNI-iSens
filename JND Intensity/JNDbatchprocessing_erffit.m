@@ -57,11 +57,29 @@ axis([-100 100 0 100])
 title('Frequency Discrimination, All Subjects','FontSize',16)
 c5=1;
 
+f6=figure;
+h6=axes('Parent', f6);
+xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
+ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+axis([-100 100 0 100])
+title('Frequency Discrimination, 50 Hz reference, All Subjects','FontSize',16)
+c6=1;
+
+f7=figure;
+h7=axes('Parent', f7);
+xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
+ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+axis([-100 100 0 100])
+title('Frequency Discrimination, 100 Hz reference, All Subjects','FontSize',16)
+c7=1;
+
 leg1={};
 leg2={};
 leg3={};
 leg4={};
 leg5={};
+leg6={};
+leg7={};
 %% Iterate through each discrimination file containing data
 for k=1:length(datafiles)
     load(datafiles{k});
@@ -224,8 +242,7 @@ for k=1:length(datafiles)
     
     %% Curve fitting - discrimination data
     
-    % Gompertz curve
-    % y(t)=a*exp(-b*exp(-ct))
+    % Cumulative distribution function
     
     %depends on variables loaded
     xdata=((testlist-ref)/ref)*100; %need to offset the frequencies (or PWs) by the reference frequency
@@ -241,31 +258,23 @@ for k=1:length(datafiles)
     ub=[110 200 inf 10 inf];
     lb=[80 0 -inf -1 -inf];
     
-    for q=1:10
+    for q=1:10 %try to fit 10 times, with 10 new guesses
         %randomly create guesses between these bounds
-        %th1 can vary between 0 and 20
-        th1=rand()*50+100; %coefficient A
-        %th2 can vary between 50 and 100
-        th2=rand()*30; %tau
-        %th3 can vary between -20 and 20
-        th3=rand()*200-200; %t0, freq offset
-        %th4 can vary between -200 and 0
-        th4=rand()*30-15; %y offset
-        %th5 can vary between -15 and 15
-        th5=rand()*200; %coefficient B
-        %gompertz
-        thIN=[th1 th2 th3 th4 th5]; %vector of theta estimates, to put in lsqcurvefit
+      
+        th1=rand()*20+40; %coefficient A
+        th2=rand()*30-15; %mu
+        th3=rand()*50-50; %sigma
+       
         
-        % %         Optimal estimates of thetas are in thOUT
-        %         [thOUT, resnorm, residual]=lsqcurvefit(@gompertzfit,thIN,xdata,ydata,lb,ub);
-        %
+        %cumulative distriution function
+        thIN=[th1 th2 th3]; %vector of theta estimates, to put in lsqcurvefit
+        
+       %
         %Use nonlinearmodel.fit from statistics toolbox - will give more
         %data about the fit
-        %Function to fit = gompertz
+        %Function to fit = cumulative normal distribution
         try
-            %             F=@(p,xdata) (p(1)*exp(-p(5)*exp(-(1/p(2)*(xdata-p(3)))))).*heaviside(xdata-p(3))+p(4);
-            F=@(p,xdata) (p(1)*exp(-p(5)*exp(-(1/p(2)*(xdata-p(3))))))+p(4);
-            %         F=@(p,xdata) (100./(1 + p(1).*exp(-p(2).*(xdata-p(3))))+p(4));
+            F=@(p,xdata) (p(1)*(1-erf((xdata-p(2))./(p(3)*sqrt(2)))));
             alldata.(expname).mdl=NonLinearModel.fit(xdata,ydata,F, thIN);
             
             
@@ -280,46 +289,48 @@ for k=1:length(datafiles)
         
     end
     %Save fit data to summary structure
-    summary_data(k,6:10)=p';
+    summary_data(k,6:8)=p';
     summary_data(k,11)=MSE;
     summary_data(k,12)=R2;
     
     %create and store summary metrics - jnd and pss
     try %in case it fails because complex
-        jnd=((gompfxn(50,p')-gompfxn(25,p'))+(gompfxn(75,p')-gompfxn(50,p')))/2;
-        if isreal(jnd)==0
+        jnd=abs(((CDFinv(50,p')-CDFinv(25,p'))+(CDFinv(75,p')-CDFinv(50,p')))/2);
+        if isreal(jnd)==0 || jnd>100
             summary_data(k,13)=NaN;
         else
             summary_data(k,13)=jnd;
         end
+       
     catch
         summary_data(k,13)=NaN;
     end
-    summary_data(k,14)=gompfxn(50,p');
+    summary_data(k,14)=CDFinv(50,p');
     summary_data(k,15)=teststrongperc(5);
     
     %% Plotting
     xfit=[-100:0.1:100];
-    yfit=(p(1)*exp(-p(5)*exp(-(1/p(2).*(xfit-p(3))))))+p(4);
+    yfit=(p(1)*(1-erf((xfit-p(2))./(p(3)*sqrt(2)))));
     %     yfit=(100./(1 + p(1).*exp(-p(2).*(xfit-p(3))))+p(4));
     
-    %plot individual blocks
-    figs.(['F' num2str(k)])=figure;
-    figs.(['H' num2str(k)])=axes('Parent',figs.(['F' num2str(k)]));
-    hold on
-    scatter(figs.(['H' num2str(k)]),[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],40,[0 0 1]);
-    scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),40,[1 0 0]);
-    plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3)
-    textline=['R-squared=' num2str(R2)];
-    text(figs.(['H' num2str(k)]),-80,80,textline,'FontSize',12);
-    hold off
-    ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
-    axis(figs.(['H' num2str(k)]),[-100 100 0 100])
-    
+%     %plot individual blocks
+%     figs.(['F' num2str(k)])=figure;
+%     figs.(['H' num2str(k)])=axes('Parent',figs.(['F' num2str(k)]));
+%     hold on
+%     scatter(figs.(['H' num2str(k)]),[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],40,[0 0 1]);
+%     scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),40,[1 0 0]);
+%     plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3)
+%     textline=['R-squared=' num2str(R2)];
+%     text(figs.(['H' num2str(k)]),-80,80,textline,'FontSize',12);
+%     hold off
+%     ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+%     axis(figs.(['H' num2str(k)]),[-100 100 0 100])
+%     
     %plot summary figures - for subject, discrimination type sets
     if summary_data(k,4)==1 %freq discrim
-        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
-        xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
+%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
+%         xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
+        
         %plot summary figs - freq discrim
         axes(h5)
         hold on
@@ -327,6 +338,23 @@ for k=1:length(datafiles)
         leg5=cat(2,leg5,['S' SID ' M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2)]);
         hold off
         c5=c5+1;
+        if ref==50
+            axes(h6)
+            hold on
+            plot(h6,xfit,yfit,'LineWidth',2,'Color',col(c6,:))
+            hold off
+            leg6=cat(2,leg6,['S' SID ' M' elec  ', Rsq=' num2str(R2)]);
+            hold off
+            c6=c6+1;
+        elseif ref==100
+            axes(h7)
+            hold on
+            plot(h7,xfit,yfit,'LineWidth',2','Color',col(c7,:))
+            hold off
+            leg7=cat(2,leg7,['S' SID ' M' elec ', Rsq=' num2str(R2)]);
+            hold off
+            c7=c7+1;
+        end
         if str2num(SID)==102
             axes(h1)
             hold on
@@ -347,8 +375,8 @@ for k=1:length(datafiles)
             c3=c3+1;
         end
     else
-        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
-        xlabel(figs.(['H' num2str(k)]),'Relative PW (Test-reference) Percentage (%)','FontSize',14);
+%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
+%         xlabel(figs.(['H' num2str(k)]),'Relative PW (Test-reference) Percentage (%)','FontSize',14);
         %plot summary figs - PW discrim
         if str2num(SID)==102
             axes(h2)
@@ -422,7 +450,7 @@ legend('Freq discrimination, 50 Hz reference','Freq discrimination, 100 Hz refer
 
 %Save everything
 cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
-save('all_data_intensityJND.mat','alldata','summary_head','summary_data','bar_data','sort_data')
+save('all_data_intensityJND_erf.mat','alldata','summary_head','summary_data','bar_data','sort_data')
 cd(defaultpath);
 
 %% Analyze indentation matching data
@@ -639,7 +667,7 @@ end
 %     
 %     %create and store summary metrics - jnd and pss
 %     try %in case it fails because complex
-%         jnd=((gompfxn(50,p')-gompfxn(25,p'))+(gompfxn(75,p')-gompfxn(50,p')))/2;
+%         jnd=((CDFinv(50,p')-CDFinv(25,p'))+(CDFinv(75,p')-CDFinv(50,p')))/2;
 %         if isreal(jnd)==0
 %             summary_data(k,13)=NaN;
 %         else
@@ -648,7 +676,7 @@ end
 %     catch
 %         summary_data(k,13)=NaN;
 %     end
-%     summary_data(k,14)=gompfxn(50,p');
+%     summary_data(k,14)=CDFinv(50,p');
 %     summary_data(k,15)=teststrongperc(5);
 %     
 %     %% Plotting
