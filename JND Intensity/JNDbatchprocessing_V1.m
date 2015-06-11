@@ -16,7 +16,7 @@ summary_head={'SID','contact','date','discrim_type','ref','p1','p2','p3','p4','p
 summary_data=[];
 
 %% Initialize figures and axes for group plots - for discrimination data
-col=[0, 0, 1; 0, 0.6, 0; 0.4, 0, 0.6; 1, 0, 0; 1, 0.4, 0; 1, 0, 0.6; 0, 0.6, 0.8; 0, 0, 0; 1, 1, 0; 0, 1, 0; 0.6, 0.4, 1; 0, 1, 0.8; 1, 0.2, 0.6; 0.6, 0, 0; 0, 0, 0.6];
+col=[0, 0, 1; 0.13, 0.54, 0.13; 0.55, 0.21, 0.55; 1, 0, 0; 1, 0.54, 0; 1, 0.4, 0.7; 0, 0.6, 0.8; 0, 0, 0; 1, 1, 0; 0, 1, 0; 0.6, 0.4, 1; 0, 1, 0.8; 1, 0.2, 0.6; 0.6, 0, 0; 0, 0, 0.6];
 f1=figure; %figure for S102, freq
 h1=axes('Parent',f1);
 xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
@@ -73,6 +73,14 @@ axis([-100 100 0 100])
 title('Frequency Discrimination, 100 Hz reference, All Subjects','FontSize',16)
 c7=1;
 
+f8=figure; %figure for all subjects, PW
+h8=axes('Parent',f8);
+xlabel('Relative PW (Test-reference) Percentage (%)','FontSize',14);
+ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+axis([-100 100 0 100])
+title('Pulse Width Discrimination, All Subjects','FontSize',16)
+c8=1;
+
 leg1={};
 leg2={};
 leg3={};
@@ -80,6 +88,7 @@ leg4={};
 leg5={};
 leg6={};
 leg7={};
+leg8={};
 %% Iterate through each discrimination file containing data
 for k=1:length(datafiles)
     load(datafiles{k});
@@ -374,10 +383,17 @@ for k=1:length(datafiles)
             leg3=cat(2,leg3,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2)]);
             c3=c3+1;
         end
-    else
+    else %then it's a PW discrimination
 %         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
 %         xlabel(figs.(['H' num2str(k)]),'Relative PW (Test-reference) Percentage (%)','FontSize',14);
         %plot summary figs - PW discrim
+            axes(h8) %plot for PW discrim for all subjects
+            hold on
+            plot(h8,xfit,yfit,'LineWidth',2','Color',col(c8,:))
+            hold off
+            leg8=cat(2,leg8,['S' SID ' M' elec ', Rsq=' num2str(R2)]);
+            hold off
+            c8=c8+1;
         if str2num(SID)==102
             axes(h2)
             hold on
@@ -404,7 +420,10 @@ legend(h1,leg1,'Location','NorthWest')
 legend(h2,leg2,'Location','SouthEast')
 legend(h3,leg3,'Location','SouthEast')
 legend(h4,leg4,'Location','SouthEast')
-legend(h5,leg5,'Location','NorthWest')
+legend(h5,leg5,'Location','EastOutside','FontSize',14)
+legend(h6,leg6,'Location','EastOutside','FontSize',14)
+legend(h7,leg7,'Location','EastOutside','FontSize',14)
+legend(h8,leg8,'Location','EastOutside','FontSize',14)
 
 %% Plot metrics - JND in bar plot
 % f50grp=find(and(summary_data(:,4)==1,summary_data(:,5)==50));
@@ -447,6 +466,40 @@ bar(bar_data,'grouped')
 set(gca,'XTickLabel',barticks)
 ylabel('Weber Fraction', 'FontSize', 14)
 legend('Freq discrimination, 50 Hz reference','Freq discrimination, 100 Hz reference','PW discrimination')
+
+%summary stats
+avgjnd(1)=mean(f50grp(f50grp>0));
+stdjnd(1)=std(f50grp(f50grp>0));
+avgjnd(2)=mean(f100grp(f100grp>0));
+stdjnd(2)=std(f100grp(f100grp>0));
+avgjnd(3)=mean(pwgrp(pwgrp>0));
+stdjnd(3)=std(pwgrp(pwgrp>0));
+
+%plot jnd bar plot to compare across conditions
+%includes error bars for the std dev
+figure
+hold on
+bar(avgjnd, 'FaceColor',[0.12 0.56 1])
+barlab={'','Freq, 50Hz ref','','Freq, 100Hz ref','','PW'};
+set(gca,'XTickLabel',barlab,'FontSize',14);
+errorbar(avgjnd, stdjnd,'.','Color','k','LineWidth',2);
+xlabel('Discrimination Condition')
+ylabel('Weber Fraction (%)', 'FontSize', 14)
+title('Sensation Intensity JND','FontSize',14)
+hold off
+
+%Plot reference stimulus average value
+sblen=length(summary_data(:,15));
+avgsubjbias=mean(summary_data(:,15));
+figure
+hold on
+bar(summary_data(:,15),'FaceColor',[0.12 0.56 1])
+bar(sblen+1,avgsubjbias,'r')
+hold off
+legend('Individual experiments','Average','FontSize',14,'Location','EastOutside','FontSize',14)
+title('Subject responses when the two stimuli were the same','FontSize',14)
+ylabel('Percentage of subject responses that were #2','FontSize',14)
+
 
 %Save everything
 cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
