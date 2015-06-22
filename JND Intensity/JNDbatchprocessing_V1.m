@@ -322,23 +322,23 @@ for k=1:length(datafiles)
     yfit=(p(1)*(1-erf((xfit-p(2))./(p(3)*sqrt(2)))));
     %     yfit=(100./(1 + p(1).*exp(-p(2).*(xfit-p(3))))+p(4));
     
-%     %plot individual blocks
-%     figs.(['F' num2str(k)])=figure;
-%     figs.(['H' num2str(k)])=axes('Parent',figs.(['F' num2str(k)]));
-%     hold on
-%     scatter(figs.(['H' num2str(k)]),[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],40,[0 0 1]);
-%     scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),40,[1 0 0]);
-%     plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3)
-%     textline=['R-squared=' num2str(R2)];
-%     text(figs.(['H' num2str(k)]),-80,80,textline,'FontSize',12);
-%     hold off
-%     ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
-%     axis(figs.(['H' num2str(k)]),[-100 100 0 100])
-%     
+    %plot individual blocks
+    figs.(['F' num2str(k)])=figure;
+    figs.(['H' num2str(k)])=axes('Parent',figs.(['F' num2str(k)]));
+    hold on
+    scatter(figs.(['H' num2str(k)]),[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],40,[0 0 1]);
+    scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),40,[1 0 0]);
+    plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3)
+    textline=['R-squared=' num2str(R2)];
+    text(figs.(['H' num2str(k)]),-80,80,textline,'FontSize',12);
+    hold off
+    ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+    axis(figs.(['H' num2str(k)]),[-100 100 0 100])
+    
     %plot summary figures - for subject, discrimination type sets
     if summary_data(k,4)==1 %freq discrim
-%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
-%         xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
+        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
+        xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
         
         %plot summary figs - freq discrim
         axes(h5)
@@ -384,8 +384,8 @@ for k=1:length(datafiles)
             c3=c3+1;
         end
     else %then it's a PW discrimination
-%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
-%         xlabel(figs.(['H' num2str(k)]),'Relative PW (Test-reference) Percentage (%)','FontSize',14);
+        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
+        xlabel(figs.(['H' num2str(k)]),'Relative PW (Test-reference) Percentage (%)','FontSize',14);
         %plot summary figs - PW discrim
             axes(h8) %plot for PW discrim for all subjects
             hold on
@@ -514,6 +514,8 @@ cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
 datafiles={};
 [datafiles, pathname]=uigetfile('*.mat','Pick the indentation analysis files','MultiSelect','on');
 cd(pathname)
+
+%initialize figures and axes
 q1=1;
 q2=1;
 f1=figure; %S102
@@ -529,75 +531,87 @@ leg1txt={};
 leg2txt={};
 
 for i=1:length(datafiles)
-    clear avg_data data
+    clear avg_data data sort_data std_data
     load(datafiles{i});
     SID=datafiles{i}(4:6);
     elec=datafiles{i}(8);
     type=datafiles{i}(9);
+    
+    %find std dev
+    sort_data=sortrows(data,1);
+    q=1;
+    for i=1:5:size(data,1)
+        std_data(q,1)=sort_data(i,1);
+        std_data(q,2)=std(sort_data(i:(i+4),2));
+        q=q+1;
+    end
+    
     %save
     ind_match_data.(['S' SID]).(['M' elec]).data=avg_data;
+    ind_match_data.(['S' SID]).(['M' elec]).std=std_data;
     
-    %determine if it was a freq or pw matching experiment
     if strcmp(type,'F')==1
         yrange=max(data(:,2));
         normdata=100*avg_data(:,2)/yrange;
         ind_match_data.(['S' SID]).(['M' elec]).scaled=cat(2,avg_data(:,1),normdata);
         axes(h1)
         
-        allmdls.(['s' SID]).(['M' elec]).freq=LinearModel.fit(avg_data(:,1),avg_data(:,2));
-        %           allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(normdata(:,1),normdata);
-        t=dataset2cell(allmdls.(['s' SID]).(['M' elec]).freq.Coefficients(:,1));
+        allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(avg_data(:,1),avg_data(:,2));
+        t=dataset2cell(allmdls.(['s' SID]).(['M' elec]).Coefficients(:,1));
         p=cell2mat(t(2:end,2));
         xfit=[0:0.1:180];
         yfit=p(1)+p(2).*xfit;
         
         hold on
         scatter(h1,avg_data(:,1), avg_data(:,2),40,col(q1,:));
-        %         scatter(h1,avg_data(:,1), normdata,40,col(q1,:));
+%         scatter(h1,avg_data(:,1), normdata,40,col(q1,:));
         plot(h1,xfit,yfit,'Color',col(q1,:));
+        errorbar(std_data(:,1),avg_data(:,2),std_data(:,2),'Marker','none','LineStyle','none','LineWidth',2,'Color',col(q1,:))
         hold off
         leg1txt=cat(2,leg1txt,[SID ' M' elec]);
-        leg1txt=cat(2,leg1txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).freq.Rsquared.Adjusted)]);
+        leg1txt=cat(2,leg1txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted)]);
+        leg1txt=cat(2,leg1txt,' ');
         q1=q1+1;
     elseif strcmp(type,'P')==1
         pwrange=max(avg_data(:,1))-min(avg_data(:,1));
-        temp=100*(avg_data(:,1)-min(avg_data(:,1)))/pwrange;
+%         temp=100*(avg_data(:,1)-min(avg_data(:,1)))/pwrange;
+        temp=avg_data(:,1)-min(avg_data(:,1));
         yrange=max(data(:,2));
         normdata=100*avg_data(:,2)/yrange;
         ind_match_data.(['S' SID]).(['M' elec]).scaled=cat(2,temp,normdata);
         axes(h2)
         
-        allmdls.(['s' SID]).(['M' elec]).pw=LinearModel.fit(temp,avg_data(:,2));
-        %         allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(temp,normdata);
-        t=dataset2cell(allmdls.(['s' SID]).(['M' elec]).pw.Coefficients(:,1));
+        allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(temp,avg_data(:,2));
+        t=dataset2cell(allmdls.(['s' SID]).(['M' elec]).Coefficients(:,1));
         p=cell2mat(t(2:end,2));
-        xfit=[0:0.1:100];
+        xfit=[0:0.1:200];
         yfit=p(1)+p(2).*xfit;
         
         hold on
         scatter(h2,temp, avg_data(:,2),40,col(q2,:));
-        %         scatter(h2,temp, normdata,40,col(q2,:));
         plot(h2,xfit,yfit,'Color',col(q2,:));
+         errorbar(temp,avg_data(:,2),std_data(:,2),'LineWidth',2,'Color',col(q2,:),'Marker','none','LineStyle','none')
         hold off
         leg2txt=cat(2,leg2txt,[SID ' M' elec]);
-        leg2txt=cat(2,leg2txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).pw.Rsquared.Adjusted)]);
+        leg2txt=cat(2,leg2txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted)]);
+        leg2txt=cat(2,leg2txt,' ');
         q2=q2+1;
     end
     xlabel(h1,'Frequency (Hz)','FontSize',14)
-    %     ylabel(h1,'Normalized Indentation Depth (um)')
     ylabel(h1,'Indentation Depth (um)','FontSize',14)
-    
-    xlabel(h2,'PW, Percentage of PW range (%us)','FontSize',14)
-    %     ylabel(h2,'Normalized Indentation Depth (um)')
+    axis(h1,[0 180 0 9000])
+   
+    xlabel(h2,'PW, Relative to sensory threshold (us))','FontSize',14)
     ylabel(h2,'Indentation Depth (um)','FontSize',14)
+    axis(h2,[0 200 0 9000]);
     
 end
-
-%plot
-title(h1,'Indentation Matching, Frequency','FontSize',16);
-title(h2,'Indentation Matching, PW','FontSize',16);
-legend(h1,leg1txt,'Location','NorthWest');
-legend(h2,leg2txt,'Location','NorthWest');
+    
+ legend(h1,leg1txt,'Location','EastOutside','FontSize',14);   
+ legend(h2,leg2txt,'Location','EastOutside','FontSize',14);
+ title(h1,'Matching indentation depth to stimulation frequency','FontSize',16)
+ title(h2,'Matching indentation depth to stimulation PW','FontSize',16)
+ 
 
 %save everything
 cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
