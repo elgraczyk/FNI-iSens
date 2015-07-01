@@ -51,32 +51,32 @@ c4=1;
 
 f5=figure;
 h5=axes('Parent', f5);
-xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
-ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14,'FontWeight','bold');
+ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14,'FontWeight','bold');
 axis([-100 100 0 100])
 title('Frequency Discrimination, All Subjects','FontSize',16)
 c5=1;
 
 f6=figure;
 h6=axes('Parent', f6);
-xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
-ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14,'FontWeight','bold');
+ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14,'FontWeight','bold');
 axis([-100 100 0 100])
 title('Frequency Discrimination, 50 Hz reference, All Subjects','FontSize',16)
 c6=1;
 
 f7=figure;
 h7=axes('Parent', f7);
-xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
-ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+xlabel('Relative Frequency (Test-reference) Percentage (%)','FontSize',14,'FontWeight','bold');
+ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14,'FontWeight','bold');
 axis([-100 100 0 100])
 title('Frequency Discrimination, 100 Hz reference, All Subjects','FontSize',16)
 c7=1;
 
 f8=figure; %figure for all subjects, PW
 h8=axes('Parent',f8);
-xlabel('Relative PW (Test-reference) Percentage (%)','FontSize',14);
-ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+xlabel('Relative PW (Test-reference) Percentage (%)','FontSize',14,'FontWeight','bold');
+ylabel('Percentage of "test stimulus stronger" responses (%)','FontSize', 14,'FontWeight','bold');
 axis([-100 100 0 100])
 title('Pulse Width Discrimination, All Subjects','FontSize',16)
 c8=1;
@@ -254,7 +254,11 @@ for k=1:length(datafiles)
     % Cumulative distribution function
     
     %depends on variables loaded
-    xdata=((testlist-ref)/ref)*100; %need to offset the frequencies (or PWs) by the reference frequency
+    if alldata.(expname).type==2
+    xdata=(((testlist-testlist(1))-(ref-testlist(1)))/(ref-testlist(1)))*100; %need to offset the frequencies (or PWs) by the reference frequency
+    else
+        xdata=((testlist-ref)/ref)*100;
+    end
     ydata=teststrongperc; %the percetage data
     ydata(5)=50; %just for purposes of curve fitting - will put in actual value later
     
@@ -318,7 +322,7 @@ for k=1:length(datafiles)
     summary_data(k,15)=teststrongperc(5);
     
     %% Plotting
-    xfit=[-100:0.1:100];
+    xfit=[-100:0.01:100];
     yfit=(p(1)*(1-erf((xfit-p(2))./(p(3)*sqrt(2)))));
     %     yfit=(100./(1 + p(1).*exp(-p(2).*(xfit-p(3))))+p(4));
     
@@ -326,25 +330,27 @@ for k=1:length(datafiles)
     figs.(['F' num2str(k)])=figure;
     figs.(['H' num2str(k)])=axes('Parent',figs.(['F' num2str(k)]));
     hold on
-    scatter(figs.(['H' num2str(k)]),[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],40,[0 0 1]);
-    scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),40,[1 0 0]);
-    plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3)
-    textline=['R-squared=' num2str(R2)];
-    text(figs.(['H' num2str(k)]),-80,80,textline,'FontSize',12);
+    plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3, 'Color', [0 0 0.8]);
+    scatter(figs.(['H' num2str(k)]),[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],70,[0.11 0.56 1],'fill');
+    scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),70,[0.8 0 0],'fill');
+    l1=legend(['Fit, Cumulative distribution'; ['function, Rsq = ' num2str(R2,'%1.2f') '        ']],'Raw data', ['Percentage of "second stimulus'; 'stronger" responses (%)       ']);
+    set(l1,'Location','SouthEast','FontSize',14,'FontName','Calibri')
+    
+    
     hold off
-    ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
+    ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14,'FontWeight','bold');
     axis(figs.(['H' num2str(k)]),[-100 100 0 100])
     
     %plot summary figures - for subject, discrimination type sets
     if summary_data(k,4)==1 %freq discrim
-        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
-        xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
+%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16,'FontWeight','bold')
+        xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14,'FontWeight','bold');
         
         %plot summary figs - freq discrim
         axes(h5)
         hold on
         plot(h5, xfit,yfit,'LineWidth',2,'Color',col(c5,:))
-        leg5=cat(2,leg5,['S' SID ' M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2)]);
+        leg5=cat(2,leg5,['S' SID ' M' elec ', ref=' num2str(ref) ', ' expdate ', Rsq=' num2str(R2,'%1.2')]);
         hold off
         c5=c5+1;
         if ref==50
@@ -352,7 +358,7 @@ for k=1:length(datafiles)
             hold on
             plot(h6,xfit,yfit,'LineWidth',2,'Color',col(c6,:))
             hold off
-            leg6=cat(2,leg6,['S' SID ' M' elec  ', Rsq=' num2str(R2)]);
+            leg6=cat(2,leg6,['S' SID ' M' elec  ', ' expdate ', Rsq=' num2str(R2,'%1.2')]);
             hold off
             c6=c6+1;
         elseif ref==100
@@ -360,7 +366,7 @@ for k=1:length(datafiles)
             hold on
             plot(h7,xfit,yfit,'LineWidth',2','Color',col(c7,:))
             hold off
-            leg7=cat(2,leg7,['S' SID ' M' elec ', Rsq=' num2str(R2)]);
+            leg7=cat(2,leg7,['S' SID ' M' elec ', ' expdate ', Rsq=' num2str(R2,'%1.2')]);
             hold off
             c7=c7+1;
         end
@@ -371,7 +377,7 @@ for k=1:length(datafiles)
             plot(h1,xfit,yfit,'LineWidth',2,'Color',col(c1,:))
             hold off
             leg1=cat(2,leg1,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
-            leg1=cat(2,leg1,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2)]);
+            leg1=cat(2,leg1,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2')]);
             c1=c1+1;
         elseif str2num(SID)==104
             axes(h3)
@@ -380,18 +386,18 @@ for k=1:length(datafiles)
             plot(h3,xfit,yfit,'LineWidth',2,'Color',col(c3,:))
             hold off
             leg3=cat(2,leg3,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
-            leg3=cat(2,leg3,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2)]);
+            leg3=cat(2,leg3,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2')]);
             c3=c3+1;
         end
     else %then it's a PW discrimination
-        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
+%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
         xlabel(figs.(['H' num2str(k)]),'Relative PW (Test-reference) Percentage (%)','FontSize',14);
         %plot summary figs - PW discrim
             axes(h8) %plot for PW discrim for all subjects
             hold on
             plot(h8,xfit,yfit,'LineWidth',2','Color',col(c8,:))
             hold off
-            leg8=cat(2,leg8,['S' SID ' M' elec ', Rsq=' num2str(R2)]);
+            leg8=cat(2,leg8,['S' SID ' M' elec ', ' expdate ', Rsq=' num2str(R2,'%1.2f')]);
             hold off
             c8=c8+1;
         if str2num(SID)==102
@@ -401,7 +407,7 @@ for k=1:length(datafiles)
             plot(h2,xfit,yfit,'LineWidth',2,'Color',col(c2,:))
             hold off
             leg2=cat(2,leg2,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
-            leg2=cat(2,leg2,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2)]);
+            leg2=cat(2,leg2,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2')]);
             c2=c2+1;
         elseif str2num(SID)==104
             axes(h4)
@@ -410,7 +416,7 @@ for k=1:length(datafiles)
             plot(h4,xfit,yfit,'LineWidth',2,'Color',col(c4,:))
             hold off
             leg4=cat(2,leg4,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
-            leg4=cat(2,leg4,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2)]);
+            leg4=cat(2,leg4,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2')]);
             c4=c4+1;
         end
     end
@@ -441,12 +447,15 @@ barticks={['S' num2str(sort_data(1,1)) ' M' num2str(sort_data(1,2)) ' ' num2str(
 for k=1:size(sort_data,1)
     if sort_data(k,4)==1 %freq
         if sort_data(k,5)==50 %col 1
-            f50grp(c1,1)=sort_data(k,13);
+            jnd_f50(c1,1)=sort_data(k,13);
+            bias_f50(c1,1)=sort_data(k,15);
         elseif sort_data(k,5)==100
-            f100grp(c1,1)=sort_data(k,13);
+            jnd_f100(c1,1)=sort_data(k,13);
+            bias_f100(c1,1)=sort_data(k,15);
         end
     elseif sort_data(k,4)==2 %pw
-        pwgrp(c1,1)=sort_data(k,13);
+        jnd_pw(c1,1)=sort_data(k,13);
+        bias_pw(c1,1)=sort_data(k,15);
     end
     if (ddate(k)>0 || delec(k)>0)
         c1=c1+1;
@@ -455,25 +464,25 @@ for k=1:size(sort_data,1)
     end
 end
 %make sure all 3 groups are the same length
-f50grp(length(f50grp)+1:c1)=0;
-f100grp(length(f100grp)+1:c1)=0;
-pwgrp(length(pwgrp)+1:c1)=0;
-bar_data=cat(2,f50grp, f100grp, pwgrp);
+jnd_f50(length(jnd_f50)+1:c1)=0;
+jnd_f100(length(jnd_f100)+1:c1)=0;
+jnd_pw(length(jnd_pw)+1:c1)=0;
+bar_data=cat(2,jnd_f50, jnd_f100, jnd_pw);
 
-%plot bar graph of jnd
-figure
-bar(bar_data,'grouped')
-set(gca,'XTickLabel',barticks)
-ylabel('Weber Fraction', 'FontSize', 14)
-legend('Freq discrimination, 50 Hz reference','Freq discrimination, 100 Hz reference','PW discrimination')
+% %plot bar graph of jnd
+% figure
+% bar(bar_data,'grouped')
+% set(gca,'XTickLabel',barticks)
+% ylabel('Weber Fraction', 'FontSize', 14)
+% legend('Freq discrimination, 50 Hz reference','Freq discrimination, 100 Hz reference','PW discrimination')
 
 %summary stats
-avgjnd(1)=mean(f50grp(f50grp>0));
-stdjnd(1)=std(f50grp(f50grp>0));
-avgjnd(2)=mean(f100grp(f100grp>0));
-stdjnd(2)=std(f100grp(f100grp>0));
-avgjnd(3)=mean(pwgrp(pwgrp>0));
-stdjnd(3)=std(pwgrp(pwgrp>0));
+avgjnd(1)=mean(jnd_f50(jnd_f50>0));
+stdjnd(1)=std(jnd_f50(jnd_f50>0))/sqrt(length(jnd_f50(jnd_f50>0)));
+avgjnd(2)=mean(jnd_f100(jnd_f100>0));
+stdjnd(2)=std(jnd_f100(jnd_f100>0))/sqrt(length(jnd_f100(jnd_f100>0)));
+avgjnd(3)=mean(jnd_pw(jnd_pw>0));
+stdjnd(3)=std(jnd_pw(jnd_pw>0))/sqrt(length(jnd_pw(jnd_pw>0)));
 
 %plot jnd bar plot to compare across conditions
 %includes error bars for the std dev
@@ -488,22 +497,54 @@ ylabel('Weber Fraction (%)', 'FontSize', 14)
 title('Sensation Intensity JND','FontSize',14)
 hold off
 
+%% Subject bias data
 %Plot reference stimulus average value
-sblen=length(summary_data(:,15));
-avgsubjbias=mean(summary_data(:,15));
+%make sure all 3 groups are the same length
+bias_f50(length(bias_f50)+1:c1)=0;
+bias_f100(length(bias_f100)+1:c1)=0;
+bias_pw(length(bias_pw)+1:c1)=0;
+%then concatenate them
+bar_bias=cat(2,bias_f50, bias_f100, bias_pw);
+
+
+%summary stats
+avgbias(1)=mean(bias_f50(bias_f50>0));
+stdbias(1)=std(bias_f50(bias_f50>0))/sqrt(length(bias_f50(bias_f50>0)));
+avgbias(2)=mean(bias_f100(bias_f100>0));
+stdbias(2)=std(bias_f100(bias_f100>0))/sqrt(length(bias_f100(bias_f100>0)));
+avgbias(3)=mean(bias_pw(bias_pw>0));
+stdbias(3)=std(bias_pw(bias_pw>0))/sqrt(length(bias_pw(bias_pw>0)));
+avgbias(4)=mean(summary_data(:,15)); %all trials
+stdbias(4)=std(summary_data(:,15))/sqrt(size(summary_data,1)); %all trials
+
+%plot subject bias bar plot to compare across conditions
+%includes error bars for the std dev
 figure
 hold on
-bar(summary_data(:,15),'FaceColor',[0.12 0.56 1])
-bar(sblen+1,avgsubjbias,'r')
+bar(avgbias, 'FaceColor',[0.12 0.56 1])
+barlab={'','Freq, 50Hz ref','','Freq, 100Hz ref','','PW', 'All data'};
+set(gca,'XTickLabel',barlab,'FontSize',14);
+errorbar(avgbias, stdbias,'.','Color','k','LineWidth',2);
+xlabel('Discrimination Condition')
+ylabel('Percentage of "second stimulus stronger" responses (%)', 'FontSize', 14)
+title('Subject Bias Measure','FontSize',14)
 hold off
-legend('Individual experiments','Average','FontSize',14,'Location','EastOutside','FontSize',14)
-title('Subject responses when the two stimuli were the same','FontSize',14)
-ylabel('Percentage of subject responses that were #2','FontSize',14)
+
+figure
+hold on
+bar(avgbias(4),'FaceColor',[0.12 0.56 1])
+set(gca,'XTickLabel','','FontSize',14)
+errorbar(avgbias(4),stdbias(4),'.','Color','k','LineWidth',2);
+ylabel('Percentage of "second stimulus stronger" responses (%)','FontSize',14)
+xlabel('All Trials','FontSize',14)
+axis([0 2 0 100])
+title('Subject Bias Measure','FontSize',14)
+hold off
 
 
 %Save everything
 cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
-save('all_data_intensityJND_erf.mat','alldata','summary_head','summary_data','bar_data','sort_data')
+save('all_data_intensityJND_erf.mat','alldata','summary_head','summary_data','bar_data','bar_bias','avgjnd','stdjnd','avgbias','stdbias','datafiles')
 cd(defaultpath);
 
 %% Analyze indentation matching data
