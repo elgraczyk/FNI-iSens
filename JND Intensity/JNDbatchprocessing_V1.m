@@ -350,7 +350,7 @@ for k=1:length(datafiles)
         axes(h5)
         hold on
         plot(h5, xfit,yfit,'LineWidth',2,'Color',col(c5,:))
-        leg5=cat(2,leg5,['S' SID ' M' elec ', ref=' num2str(ref) ', ' expdate ', Rsq=' num2str(R2,'%1.2')]);
+        leg5=cat(2,leg5,['S' SID ' M' elec ', ref=' num2str(ref) ', ' expdate ', Rsq=' num2str(R2,'%1.2f')]);
         hold off
         c5=c5+1;
         if ref==50
@@ -358,7 +358,7 @@ for k=1:length(datafiles)
             hold on
             plot(h6,xfit,yfit,'LineWidth',2,'Color',col(c6,:))
             hold off
-            leg6=cat(2,leg6,['S' SID ' M' elec  ', ' expdate ', Rsq=' num2str(R2,'%1.2')]);
+            leg6=cat(2,leg6,['S' SID ' M' elec  ', ' expdate ', Rsq=' num2str(R2,'%1.2f')]);
             hold off
             c6=c6+1;
         elseif ref==100
@@ -366,7 +366,7 @@ for k=1:length(datafiles)
             hold on
             plot(h7,xfit,yfit,'LineWidth',2','Color',col(c7,:))
             hold off
-            leg7=cat(2,leg7,['S' SID ' M' elec ', ' expdate ', Rsq=' num2str(R2,'%1.2')]);
+            leg7=cat(2,leg7,['S' SID ' M' elec ', ' expdate ', Rsq=' num2str(R2,'%1.2f')]);
             hold off
             c7=c7+1;
         end
@@ -377,7 +377,7 @@ for k=1:length(datafiles)
             plot(h1,xfit,yfit,'LineWidth',2,'Color',col(c1,:))
             hold off
             leg1=cat(2,leg1,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
-            leg1=cat(2,leg1,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2')]);
+            leg1=cat(2,leg1,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2f')]);
             c1=c1+1;
         elseif str2num(SID)==104
             axes(h3)
@@ -386,7 +386,7 @@ for k=1:length(datafiles)
             plot(h3,xfit,yfit,'LineWidth',2,'Color',col(c3,:))
             hold off
             leg3=cat(2,leg3,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
-            leg3=cat(2,leg3,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2')]);
+            leg3=cat(2,leg3,['Fit, M' elec ', ref=' num2str(ref) ', Rsq=' num2str(R2,'%1.2f')]);
             c3=c3+1;
         end
     else %then it's a PW discrimination
