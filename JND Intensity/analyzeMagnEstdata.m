@@ -16,7 +16,7 @@ outdir=pathName(1:end-5);
 
 %this will loop through all the data files
 for k=1:length(datafiles)
-    load(datafiles{k}); %load data 
+    load(datafiles{k}); %load data
     %get basic info from the file
     SID=MyData.PatientID;
     elec=cell2mat(MyData.Contact);
@@ -38,7 +38,7 @@ for k=1:length(datafiles)
         else
         end
     end
-        
+    
     expdata=[];
     expdata=[MyData.ConditionList(1:n)' MyData.UpperFreq(1:n) MyData.UpperPW(1:n) MyData.UpperPA(1:n) MyData.Response];
     expdata=expdata(MyData.Trial(1):end,:);
@@ -56,13 +56,13 @@ for k=1:length(datafiles)
     alldata.(expname).normdata.header={'Condition', 'UpperFreq','UpperPW','UpperPA','NormalizedResponse'};
     alldata.(expname).normdata.data=expdata;
     
-    
-    figure
-    scatter([1:1:size(expdata,1)],expdata(:,5))
-%     [fits.(expname).time, gof]=fit([1:1:size(expdata,1)],expdata(:,5));
-    title(['S' SID ' M' elec ' Effect of time'])
-    xlabel('Trial number')
-    ylabel('Perceived magnitude')
+    %
+    %     figure
+    %     scatter([1:1:size(expdata,1)],expdata(:,5))
+    %     %     [fits.(expname).time, gof]=fit([1:1:size(expdata,1)],expdata(:,5));
+    %     title(['S' SID ' M' elec ' Effect of time'])
+    %     xlabel('Trial number')
+    %     ylabel('Perceived magnitude')
     
     sortdata=sortrows(expdata,[1 2 3]);
     
@@ -73,57 +73,58 @@ for k=1:length(datafiles)
     datacond1=sortdata(ind_cond1,:);
     datacond2=sortdata(ind_cond2,:);
     datacond3=sortdata(ind_cond3,:);
-    
-    %condition 1 - PW variable, freq constant
-    [f, fits.(expname).cond1.gof]=fit(datacond1(:,3),datacond1(:,5),'poly1');
-    fits.(expname).cond1.coeff.names=coeffnames(f);
-    fits.(expname).cond1.coeff.coeff=coeffvalues(f);
-    x=[min(datacond3(:,3)):0.01:max(datacond3(:,3))];
-    y=fits.(expname).cond1.coeff.coeff(1).*x+fits.(expname).cond1.coeff.coeff(2);
-    figure
-    hold on
-    scatter(datacond1(:,3),datacond1(:,5))
-    plot(x,y)
-    hold off
-    title(['S' SID ' M' elec ' Condition 1 - PW variable, freq constant'])
-    xlabel('PW (us)')
-    ylabel('Perceived magnitude')
-    
-    %condition 2 - PW constant, freq variable
-    [f, fits.(expname).cond2.gof]=fit(datacond2(:,2),datacond2(:,5),'poly1');
-    fits.(expname).cond2.coeff.names=coeffnames(f);
-    fits.(expname).cond2.coeff.coeff=coeffvalues(f);
-    x=[min(datacond3(:,2)):0.01:max(datacond3(:,2))];
-    y=fits.(expname).cond2.coeff.coeff(1).*x+fits.(expname).cond2.coeff.coeff(2);
-    figure
-    hold on
-    scatter(datacond2(:,2),datacond2(:,5))
-    plot(x,y)
-    hold off
-    title(['S' SID ' M' elec ' Condition 2 - PW constant, freq variable'])
-    xlabel('Frequency (Hz)')
-    ylabel('Perceived magnitude')
-    
-%     %condition 3 - both PW and freq variable
-%     figure
-%     scatter(datacond3(:,2), datacond3(:,5))
-%     title('Condition 3 - Both PW and freq varying together')
-%     xlabel('Frequency (Hz)')
-%     ylabel('Perceived magnitude')
-%     
-    figure
-    hold on
-    [f, fits.(expname).cond3.gof]=fit(datacond3(:,3), datacond3(:,5),'poly1');
-    fits.(expname).cond3.coeff.names=coeffnames(f);
-    fits.(expname).cond3.coeff.coeff=coeffvalues(f);
-    x=[min(datacond3(:,3)):0.01:max(datacond3(:,3))];
-    y=fits.(expname).cond3.coeff.coeff(1).*x+fits.(expname).cond3.coeff.coeff(2);
-    scatter(datacond3(:,3), datacond3(:,5))
-    plot(x,y)
-    hold off
-    title(['S' SID ' M' elec ' Condition 3 - Both PW and freq varying together'])
-    xlabel('PW (us)')
-    ylabel('Perceived magnitude')
+    %
+    %     %condition 1 - PW variable, freq constant
+    %     [f, fits.(expname).cond1.gof]=fit(datacond1(:,3),datacond1(:,5),'poly1');
+    %     fits.(expname).cond1.coeff.names=coeffnames(f);
+    %     fits.(expname).cond1.coeff.coeff=coeffvalues(f);
+    %     x=[min(datacond3(:,3)):0.01:max(datacond3(:,3))];
+    %     y=fits.(expname).cond1.coeff.coeff(1).*x+fits.(expname).cond1.coeff.coeff(2);
+    %     figure
+    %     hold on
+    %     scatter(datacond1(:,3),datacond1(:,5))
+    %     plot(x,y)
+    %     hold off
+    %     title(['S' SID ' M' elec ' Condition 1 - PW variable, freq constant'])
+    %     xlabel('PW (us)')
+    %     ylabel('Perceived magnitude')
+    %
+    %     %condition 2 - PW constant, freq variable
+    %     [f, fits.(expname).cond2.gof]=fit(datacond2(:,2),datacond2(:,5),'poly1');
+    %     fits.(expname).cond2.coeff.names=coeffnames(f);
+    %     fits.(expname).cond2.coeff.coeff=coeffvalues(f);
+    %     x=[min(datacond3(:,2)):0.01:max(datacond3(:,2))];
+    %     y=fits.(expname).cond2.coeff.coeff(1).*x+fits.(expname).cond2.coeff.coeff(2);
+    %
+    %     figure
+    %     hold on
+    %     scatter(datacond2(:,2),datacond2(:,5))
+    %     plot(x,y)
+    %     hold off
+    %     title(['S' SID ' M' elec ' Condition 2 - PW constant, freq variable'])
+    %     xlabel('Frequency (Hz)')
+    %     ylabel('Perceived magnitude')
+    %
+    %     %     %condition 3 - both PW and freq variable
+    %     %     figure
+    %     %     scatter(datacond3(:,2), datacond3(:,5))
+    %     %     title('Condition 3 - Both PW and freq varying together')
+    %     %     xlabel('Frequency (Hz)')
+    %     %     ylabel('Perceived magnitude')
+    %     %
+    %     figure
+    %     hold on
+    %     [f, fits.(expname).cond3.gof]=fit(datacond3(:,3), datacond3(:,5),'poly1');
+    %     fits.(expname).cond3.coeff.names=coeffnames(f);
+    %     fits.(expname).cond3.coeff.coeff=coeffvalues(f);
+    %     x=[min(datacond3(:,3)):0.01:max(datacond3(:,3))];
+    %     y=fits.(expname).cond3.coeff.coeff(1).*x+fits.(expname).cond3.coeff.coeff(2);
+    %     scatter(datacond3(:,3), datacond3(:,5))
+    %     plot(x,y)
+    %     hold off
+    %     title(['S' SID ' M' elec ' Condition 3 - Both PW and freq varying together'])
+    %     xlabel('PW (us)')
+    %     ylabel('Perceived magnitude')
     
     figure
     scatter(datacond3(:,3), datacond3(:,2))
@@ -131,10 +132,62 @@ for k=1:length(datafiles)
     xlabel('PW (us)')
     ylabel('Frequency (Hz)')
     
-    sortdata=sortrows(expdata,[1,3,2]);
-    for i=2:size(sortdata,1)
-        %check for cond shift
-        if sortdata(i,1)
+    sorted.datacond1=datacond1;
+    sorted.datacond2=datacond2;
+    sorted.datacond3=datacond3;
+    for i=1:3
+        if i==2
+            ind_delta=find((sorted.(['datacond' num2str(i)])(2:end,2)-sorted.(['datacond' num2str(i)])(1:end-1,2))>0);
+        else
+            ind_delta=find((sorted.(['datacond' num2str(i)])(2:end,3)-sorted.(['datacond' num2str(i)])(1:end-1,3))>0);
+            
+        end
+        ind_delta=cat(1,0,ind_delta);
+        
+        for j=2:length(ind_delta)+1
+            if j==length(ind_delta)+1
+                
+                if i==2
+                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,2);
+                else
+                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,3);
+                end
+                avgs.(['cond' num2str(i)])(j-1,2)=mean(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5));
+                avgs.(['cond' num2str(i)])(j-1,3)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5))/(ind_delta(j)-ind_delta(j-1)+1);
+            else
+                if i==2
+                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),2);
+                else
+                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),3);
+                end
+                avgs.(['cond' num2str(i)])(j-1,2)=mean(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:ind_delta(j),5));
+                avgs.(['cond' num2str(i)])(j-1,3)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:ind_delta(j),5))/(ind_delta(j)-ind_delta(j-1)+1);
+           
+            end
+        end
+        figure
+        hold on
+        if i==2
+            scatter(sorted.datacond2(:,2),sorted.datacond2(:,5))
+            title(['S' SID ' M' elec ' Condition 2 - PW constant, freq variable'])
+            xlabel('Frequency (Hz)')
+        else
+            scatter(sorted.(['datacond' num2str(i)])(:,3),sorted.(['datacond' num2str(i)])(:,5))
+            xlabel('PW (us)')
+            if i==1
+                title(['S' SID ' M' elec ' Condition 1 - PW variable, freq constant'])
+            else
+                title(['S' SID ' M' elec ' Condition 3 - both PW and freq variable'])
+            end
+        end
+        
+        errorbar(avgs.(['cond' num2str(i)])(:,1),avgs.(['cond' num2str(i)])(:,2), avgs.(['cond' num2str(i)])(:,3),'o','Color','r','LineWidth',2);
+        ylabel('Perceived magnitude')
+        hold off
+    end
+    
+    
+    
 end
 
 cd(outdir)

@@ -711,6 +711,31 @@ for i=1:length(fname)
 
 end
 
+%Plot subject bias data - in separate sections for ref=test and ref~=test
+eq_reftest=load('datafor_minitab_ref_eq_test_trials.txt','-ascii');
+dif_reftest=load('datafor_minitab_ref_diff_test_trials.txt','-ascii');
+
+avg_eq=mean(eq_reftest(:,8));
+std_eq=(std(eq_reftest(:,8))/size(eq_reftest,1));
+avg_dif=mean(dif_reftest(:,8));
+std_dif=(std(dif_reftest(:,8))/size(dif_reftest,1));
+
+avgs=cat(1,0.5, avg_eq-1,avg_dif-1);
+stds=cat(1,0,std_eq,std_dif);
+
+f=figure;
+hold on
+bar(avgs, 'FaceColor',[0.12 0.56 1])
+barlab={'','Hypothesized proportion ','','Test=ref','','Test~=ref', ''};
+set(gca,'XTickLabel',barlab,'FontSize',14);
+errorbar(avgs, stds,'.','Color','k','LineWidth',2);
+xlabel('Trial type')
+ylabel('Percentage of "first stimulus stronger" responses (%)', 'FontSize', 14)
+title('Subject Bias Measure','FontSize',14)
+hold off
+saveas(f,'SubjBias.tif')
+
+
 % %% Curve fitting - data transformed into indentation depths
 %     
 %     % Gompertz curve
