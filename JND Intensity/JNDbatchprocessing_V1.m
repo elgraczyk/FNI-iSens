@@ -12,7 +12,7 @@ cd(PathName);
 
 %Initialize structure to store all analyzed data in
 alldata=[];
-summary_head={'SID','contact','date','discrim_type','ref','p1','p2','p3','p4','p5','MSE','Rsquared','JND','PSS','subj_bias'};
+summary_head={'SID','contact','date','discrim_type','ref','p1','p2','p3','p4','filename','MSE','Rsquared','JND','PSS','subj_bias'};
 summary_data=[];
 
 %% Initialize figures and axes for group plots - for discrimination data
@@ -255,12 +255,15 @@ for k=1:length(datafiles)
     
     %depends on variables loaded
     if alldata.(expname).type==2
-    xdata=(((testlist-testlist(1))-(ref-testlist(1)))/(ref-testlist(1)))*100; %need to offset the frequencies (or PWs) by the reference frequency
+%     xdata=(((testlist-testlist(1))-(ref-testlist(1)))/(ref-testlist(1)))*100; %need to offset the frequencies (or PWs) by the reference frequency
+    xdata=(testlist-ref)/(ref)*100; %need to offset the frequencies (or PWs) by the reference frequency
     else
         xdata=((testlist-ref)/ref)*100;
     end
+    xdata=[xdata(1:4) xdata(6:9)];
     ydata=teststrongperc; %the percetage data
     ydata(5)=50; %just for purposes of curve fitting - will put in actual value later
+    ydata=[ydata(1:4) ydata(6:9)];
     
     %try 10 curve fits
     MSE=inf; %initialize to infinity
@@ -303,6 +306,7 @@ for k=1:length(datafiles)
     end
     %Save fit data to summary structure
     summary_data(k,6:8)=p';
+    summary_data(k,10)=str2num(datestr(datevec(datafiles{k}(11:end-4),'yyyy-mm-dd T HH.MM.SSPM'),'yyyymmddHHMMSS'));
     summary_data(k,11)=MSE;
     summary_data(k,12)=R2;
     
@@ -330,21 +334,23 @@ for k=1:length(datafiles)
     figs.(['F' num2str(k)])=figure;
     figs.(['H' num2str(k)])=axes('Parent',figs.(['F' num2str(k)]));
     hold on
-    plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3, 'Color', [0 0 0.8]);
-    scatter(figs.(['H' num2str(k)]),[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],70,[0.11 0.56 1],'fill');
-    scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),70,[0.8 0 0],'fill');
-    l1=legend(['Fit, Cumulative distribution'; ['function, Rsq = ' num2str(R2,'%1.2f') '        ']],'Raw data', ['Percentage of "second stimulus'; 'stronger" responses (%)       ']);
-    set(l1,'Location','SouthEast','FontSize',14,'FontName','Calibri')
+    scatter(figs.(['H' num2str(k)]),xdata,ydata,70,[0.11 0.56 1],'fill');
+    plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3, 'Color', [0.28 0.23 0.54]);
     
+%     scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),70,[0.8 0 0],'fill');
+%     l1=legend(['Fit, Cumulative distribution'; ['function, Rsq = ' num2str(R2,'%1.2f') '        ']],'Raw data', ['Percentage of "second stimulus'; 'stronger" responses (%)       ']);
+    l1=legend('Raw data',['Fit, Cumulative distribution'; ['function, Rsq = ' num2str(R2,'%1.2f') '        ']]);
+    set(l1,'Location','SouthEast','FontSize',15,'FontName','Calibri')
+    set(l1,'Box','off')
     
     hold off
-    ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14,'FontWeight','bold');
+    ylabel(figs.(['H' num2str(k)]),'Percentage of "test stimulus stronger" responses (%)','FontSize', 14);
     axis(figs.(['H' num2str(k)]),[-100 100 0 100])
     
     %plot summary figures - for subject, discrimination type sets
     if summary_data(k,4)==1 %freq discrim
-%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16,'FontWeight','bold')
-        xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14,'FontWeight','bold');
+        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' Frequency discrimination, ref=' num2str(ref) ' Hz'],'FontSize',16)
+        xlabel(figs.(['H' num2str(k)]),'Relative Frequency (Test-reference) Percentage (%)','FontSize',14);
         
         %plot summary figs - freq discrim
         axes(h5)
@@ -373,7 +379,7 @@ for k=1:length(datafiles)
         if str2num(SID)==102
             axes(h1)
             hold on
-            scatter(h1,[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],20,col(c1,:));
+            scatter(h1,xdata,ydata,20,col(c1,:));
             plot(h1,xfit,yfit,'LineWidth',2,'Color',col(c1,:))
             hold off
             leg1=cat(2,leg1,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
@@ -382,7 +388,7 @@ for k=1:length(datafiles)
         elseif str2num(SID)==104
             axes(h3)
             hold on
-            scatter(h3,[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],20,col(c3,:));
+            scatter(h3,xdata,ydata,20,col(c3,:));
             plot(h3,xfit,yfit,'LineWidth',2,'Color',col(c3,:))
             hold off
             leg3=cat(2,leg3,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
@@ -390,7 +396,7 @@ for k=1:length(datafiles)
             c3=c3+1;
         end
     else %then it's a PW discrimination
-%         title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' Date:' expdate],'FontSize',16)
+        title(figs.(['H' num2str(k)]),['S' SID ' M' elec ' PW discrimination, ref=' num2str(ref) ' us'],'FontSize',16)
         xlabel(figs.(['H' num2str(k)]),'Relative PW (Test-reference) Percentage (%)','FontSize',14);
         %plot summary figs - PW discrim
             axes(h8) %plot for PW discrim for all subjects
@@ -403,7 +409,7 @@ for k=1:length(datafiles)
         if str2num(SID)==102
             axes(h2)
             hold on
-            scatter(h2,[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],20,col(c2,:));
+            scatter(h2,xdata,ydata,20,col(c2,:));
             plot(h2,xfit,yfit,'LineWidth',2,'Color',col(c2,:))
             hold off
             leg2=cat(2,leg2,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
@@ -412,7 +418,7 @@ for k=1:length(datafiles)
         elseif str2num(SID)==104
             axes(h4)
             hold on
-            scatter(h4,[xdata(1:4) xdata(6:9)],[ydata(1:4) ydata(6:9)],20,col(c4,:));
+            scatter(h4,xdata,ydata,20,col(c4,:));
             plot(h4,xfit,yfit,'LineWidth',2,'Color',col(c4,:))
             hold off
             leg4=cat(2,leg4,['Raw, M' elec ', ref=' num2str(ref) ', Date:' expdate]);
@@ -431,6 +437,240 @@ legend(h6,leg6,'Location','EastOutside','FontSize',14)
 legend(h7,leg7,'Location','EastOutside','FontSize',14)
 legend(h8,leg8,'Location','EastOutside','FontSize',14)
 
+set(h1,'Box','off')
+set(h2,'Box','off')
+set(h3,'Box','off')
+set(h4,'Box','off')
+set(h5,'Box','off')
+set(h6,'Box','off')
+set(h7,'Box','off')
+set(h8,'Box','off')
+
+%% Pooling data across days for individual contacts
+
+%average across days if contact was run more than one day
+%first, need to sort, so can find changes
+sort_data=sortrows(summary_data,[1 2 3 4 5]);
+ddate=cat(1,0, sort_data(2:end,3)-sort_data(1:(end-1),3));
+
+delec=cat(1,0, abs(sort_data(2:end,2)-sort_data(1:(end-1),2)));
+idelec=cat(1,1, find(delec~=0),size(sort_data,1)+1); %indices where electrode changes
+
+q=1; %to track progress through idelec - will sit at the start of the previous contact rows
+barticks={['S' num2str(sort_data(1,1)) ' M' num2str(sort_data(1,2)) ' ' num2str(sort_data(1,3))]};
+
+
+%iterate through the contacts
+for k=2:length(idelec) %num of unique contacts - first one is a dummy index for 1
+    
+    %     elecset=[];
+    %     %make a smaller set of data - just the rows for a given contact
+    %     elecset=sortrows(sort_data(idelec(k-1):idelec(k),:),[5 4]);
+    
+    %see if there was a change in date within the range of trials for that
+    %contact
+    poolcheck=[];
+    poolcheck=find(ddate(idelec(k-1)+1:idelec(k)-1)~=0);
+    if isempty(poolcheck) %no change in day - do not pool data
+        %copy raw data into new pooled_data structure
+        for i=idelec(k-1):idelec(k)-1
+            SID=['S' num2str(sort_data(i,1))];
+            elec=['M' num2str(sort_data(i,2))];
+            ref=sort_data(i,5);
+            type=sort_data(i,4);
+            expname=['Exp' num2str(sort_data(i,10))];
+            testlist=((alldata.(expname).testlist-ref)/ref)*100;
+            if type==1
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).rawdata=cat(1,testlist,alldata.(expname).percentage);
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).fitmdl=alldata.(expname).mdl;
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).fitparams=sort_data(i,6:8);
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).Rsq=sort_data(i,12);
+            else
+                allpooled.(SID).(elec).PW.individ.(expname).rawdata=cat(1,testlist,alldata.(expname).percentage);
+                allpooled.(SID).(elec).PW.individ.(expname).fitmdl=alldata.(expname).mdl;
+                allpooled.(SID).(elec).PW.individ.(expname).fitparams=sort_data(i,6:8);
+                allpooled.(SID).(elec).PW.individ.(expname).Rsq=sort_data(i,12);
+            end
+            %add rows of new pooled data summary matrix
+            pooled_data(q,:)=sort_data(i,:);
+            q=q+1;
+        end
+        %no need to run new fit
+        
+        
+    else % change in day - need to pool your data for that contact
+        %copy individ data into pooled data structure - to save it
+        temp.PW=[];
+        temp.F50=[];
+        temp.F100=[];
+        for i=idelec(k-1):idelec(k)-1
+            SID=['S' num2str(sort_data(i,1))];
+            elec=['M' num2str(sort_data(i,2))];
+            ref=sort_data(i,5);
+            type=sort_data(i,4);
+            expname=['Exp' num2str(sort_data(i,10))];
+            testlist=((alldata.(expname).testlist-ref)/ref)*100;
+            if type==1
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).rawdata=cat(1,testlist,alldata.(expname).percentage);
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).fitmdl=alldata.(expname).mdl;
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).fitparams=sort_data(i,6:8);
+                allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).Rsq=sort_data(i,12);
+                
+                %pool raw data
+                if ref==50;
+                    temp.F50=[temp.F50 allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).rawdata];
+                else %ref=100
+                    temp.F100=[temp.F100 allpooled.(SID).(elec).(['F' num2str(ref)]).individ.(expname).rawdata];
+                end
+            else
+                allpooled.(SID).(elec).PW.individ.(expname).rawdata=cat(1,testlist,alldata.(expname).percentage);
+                allpooled.(SID).(elec).PW.individ.(expname).fitmdl=alldata.(expname).mdl;
+                allpooled.(SID).(elec).PW.individ.(expname).fitparams=sort_data(i,6:8);
+                allpooled.(SID).(elec).PW.individ.(expname).Rsq=sort_data(i,12);
+                
+                %pool raw data
+                temp.PW=[temp.PW allpooled.(SID).(elec).PW.individ.(expname).rawdata];
+            end
+            
+        end
+        
+        %Now working on the pooled data as a whole
+        conds=fieldnames(temp);
+        for i=1:length(conds)
+            %save pooled raw data into allpooled structure
+            allpooled.(SID).(elec).(conds{i}).pooled.rawdata=temp.(conds{i});
+            
+            if size(temp.(conds{i}),2)>9
+                %Fit a new CDF curve to the pooled data
+                xdata=temp.(conds{i})(1,:);
+                ydata=temp.(conds{i})(2,:);
+                
+                %try 10 curve fits
+                MSE=inf; %initialize to infinity
+                p=[]; %initialize
+                w=[]; %throwaway variable - used to format p later
+                
+                %Specify upper and lower bounds - only useful for lsqcurvefit
+                ub=[110 200 inf 10 inf];
+                lb=[80 0 -inf -1 -inf];
+                
+                for guess=1:10 %try to fit 10 times, with 10 new guesses
+                    %randomly create guesses between these bounds
+                    
+                    th1=rand()*20+40; %coefficient A
+                    th2=rand()*30-15; %mu
+                    th3=rand()*50-50; %sigma
+                    
+                    
+                    %cumulative distriution function
+                    thIN=[th1 th2 th3]; %vector of theta estimates, to put in lsqcurvefit
+                    
+                    %
+                    %Use nonlinearmodel.fit from statistics toolbox - will give more
+                    %data about the fit
+                    %Function to fit = cumulative normal distribution
+                    try
+                        F=@(p,xdata) (p(1)*(1-erf((xdata-p(2))./(p(3)*sqrt(2)))));
+                        allpooled.(SID).(elec).(conds{i}).pooled.fitmdl=NonLinearModel.fit(xdata,ydata,F, thIN);
+                        
+                        
+                        if allpooled.(SID).(elec).(conds{i}).pooled.fitmdl.MSE < MSE
+                            w=dataset2cell(allpooled.(SID).(elec).(conds{i}).pooled.fitmdl.Coefficients(:,1));
+                            p=cell2mat(w(2:end,2));
+                            MSE=allpooled.(SID).(elec).(conds{i}).pooled.fitmdl.MSE;
+                            R2=allpooled.(SID).(elec).(conds{i}).pooled.fitmdl.Rsquared.Adjusted;
+                        end
+                    catch
+                    end
+                    
+                end
+                allpooled.(SID).(elec).(conds{i}).pooled.fitparams=p';
+                allpooled.(SID).(elec).(conds{i}).pooled.Rsq=R2;
+                
+                %plot pooled fit and individ fits
+                xfit=[-100:0.01:100];
+                figure
+                c1=1;
+                leg={};
+                col=[0 0 1; 0 1 0; 1 0 0; 0 1 1; 1 0 1; 1 1 0];
+                runs=fieldnames(allpooled.(SID).(elec).(conds{i}).individ);
+                hold on
+                for j=1:length(runs)
+                    p=[];
+                    p=allpooled.(SID).(elec).(conds{i}).individ.(runs{j}).fitparams;
+                    yfit=(p(1)*(1-erf((xfit-p(2))./(p(3)*sqrt(2)))));
+                    plot(xfit,yfit,'Color',col(c1,:))
+                    leg=cat(1,leg,runs{j});
+                    c1=c1+1;
+                end
+                p=[];
+                p=allpooled.(SID).(elec).(conds{i}).pooled.fitparams;
+                yfit=(p(1)*(1-erf((xfit-p(2))./(p(3)*sqrt(2)))));
+                plot(xfit,yfit,'Color',col(c1,:))
+                leg=cat(1,leg,'Pooled');
+                hold off
+                title([SID ' ' elec ' ' conds{i}])
+                legend(leg);
+                
+                
+                %add rows of new pooled data summary matrix
+                pooled_data(q,1:2)=sort_data(idelec(k)-1,1:2);
+                if strcmp(conds{i},'PW')
+                    pooled_data(q,4)=2;
+                elseif strcmp(conds{i},'F50')
+                    pooled_data(q,4)=1;
+                    pooled_data(q,5)=50;
+                else
+                    pooled_data(q,4)=1;
+                    pooled_data(q,5)=100;
+                end
+                pooled_data(q,6:8)=p;
+                pooled_data(q,11)=MSE;
+                pooled_data(q,12)=R2;
+                
+            else
+                %add rows of new pooled data summary matrix
+                pooled_data(q,1:2)=sort_data(idelec(k)-1,1:2);
+                if strcmp(conds{i},'PW')
+                    pooled_data(q,4)=2;
+                elseif strcmp(conds{i},'F50')
+                    pooled_data(q,4)=1;
+                    pooled_data(q,5)=50;
+                else
+                    pooled_data(q,4)=1;
+                    pooled_data(q,5)=100;
+                end
+                
+                runs=fieldnames(allpooled.(SID).(elec).(conds{i}).individ);
+                pooled_data(q,6:8)=allpooled.(SID).(elec).(conds{i}).individ.(runs{1}).fitparams;
+                pooled_data(q,12)=allpooled.(SID).(elec).(conds{i}).individ.(runs{1}).Rsq;
+            end
+            
+            %create and store summary metrics - jnd and pss
+                try %in case it fails because complex
+                    jnd=abs(((CDFinv(50,p)-CDFinv(25,p))+(CDFinv(75,p)-CDFinv(50,p)))/2);
+                    if isreal(jnd)==0 || jnd>100
+                        pooled_data(q,13)=NaN;
+                    else
+                        pooled_data(q,13)=jnd;
+                    end
+
+                catch
+                    pooled_data(q,13)=NaN;
+                end
+                pooled_data(q,14)=CDFinv(50,p);
+                
+            
+            q=q+1;
+            
+        end
+        
+              
+    end
+    
+    
+    
+end
 %% Plot metrics - JND in bar plot
 % f50grp=find(and(summary_data(:,4)==1,summary_data(:,5)==50));
 % f100grp=find(and(summary_data(:,4)==1,summary_data(:,5)==100))
@@ -439,12 +679,17 @@ legend(h8,leg8,'Location','EastOutside','FontSize',14)
 %need to restructure data in order to feed into bar()
 sort_data=sortrows(summary_data,[3 2 4 5]);
 ddate=cat(1,sort_data(2:end,3)-sort_data(1:(end-1),3),0);
+
 delec=cat(1,abs(sort_data(2:end,2)-sort_data(1:(end-1),2)),0);
 
-c1=1;
+
+c1=1; %to create bar data structure
+
 barticks={['S' num2str(sort_data(1,1)) ' M' num2str(sort_data(1,2)) ' ' num2str(sort_data(1,3))]};
 
+
 for k=1:size(sort_data,1)
+    
     if sort_data(k,4)==1 %freq
         if sort_data(k,5)==50 %col 1
             jnd_f50(c1,1)=sort_data(k,13);
@@ -457,6 +702,7 @@ for k=1:size(sort_data,1)
         jnd_pw(c1,1)=sort_data(k,13);
         bias_pw(c1,1)=sort_data(k,15);
     end
+    
     if (ddate(k)>0 || delec(k)>0)
         c1=c1+1;
         barticks=cat(2,barticks,['S' num2str(sort_data(k,1)) ' M' num2str(sort_data(k,2)) ' ' num2str(sort_data(k,3))]);
@@ -494,7 +740,7 @@ set(gca,'XTickLabel',barlab,'FontSize',14);
 errorbar(avgjnd, stdjnd,'.','Color','k','LineWidth',2);
 xlabel('Discrimination Condition')
 ylabel('Weber Fraction (%)', 'FontSize', 14)
-title('Sensation Intensity JND','FontSize',14)
+% title('Sensation Intensity JND','FontSize',14)
 hold off
 
 %% Subject bias data
@@ -544,7 +790,10 @@ hold off
 
 %Save everything
 cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
-save('all_data_intensityJND_erf.mat','alldata','summary_head','summary_data','bar_data','bar_bias','avgjnd','stdjnd','avgbias','stdbias','datafiles')
+save('all_data_intensityJND_erf.mat','alldata','summary_head','summary_data','bar_data','bar_bias','avgjnd','stdjnd','avgbias','stdbias','datafiles','pooled_data','allpooled')
+
+% save('datafor_minitab_summary.txt','summary_head','-ascii','-tabs')
+save('datafor_minitab_summary.txt','summary_data','-append','-ascii','-tabs')
 cd(defaultpath);
 
 %% Analyze indentation matching data
@@ -571,6 +820,10 @@ col=[0 0 1; 0 1 0; 1 0 0; 0.7 0 1; 0 0 0; 1 0 1];
 leg1txt={};
 leg2txt={};
 
+summary_ind_data=[];
+summary_stat=[];
+q3=1;
+
 for i=1:length(datafiles)
     clear avg_data data sort_data std_data
     load(datafiles{i});
@@ -578,23 +831,40 @@ for i=1:length(datafiles)
     elec=datafiles{i}(8);
     type=datafiles{i}(9);
     
+    summary_ind_data(i,1)=str2num(SID);
+    summary_ind_data(i,2)=str2num(elec);
+    
+    for j=1:size(avg_data,1)
+        summary_stat(q3:q3+j-1,1)=str2num(SID);
+        summary_stat(q3:q3+j-1,2)=str2num(elec);
+    end
+    if strcmp(type,'F')==1
+        summary_stat(q3:j+q3-1,3)=1;
+    else
+        summary_stat(q3:j+q3-1,3)=2;
+    end
+    summary_stat(q3:j+q3-1,4:5)=avg_data;
+    q3=q3+size(avg_data,1);
+    
     %find std dev
     sort_data=sortrows(data,1);
     q=1;
-    for i=1:5:size(data,1)
-        std_data(q,1)=sort_data(i,1);
-        std_data(q,2)=std(sort_data(i:(i+4),2));
+    for j=1:5:size(data,1)
+        std_data(q,1)=sort_data(j,1);
+        std_data(q,2)=std(sort_data(j:(j+4),2))/sqrt(5);
         q=q+1;
     end
     
     %save
-    ind_match_data.(['S' SID]).(['M' elec]).data=avg_data;
-    ind_match_data.(['S' SID]).(['M' elec]).std=std_data;
+    ind_match_data.(['S' SID]).(['M' elec]).(type).data=avg_data;
+    ind_match_data.(['S' SID]).(['M' elec]).(type).std=std_data;
     
     if strcmp(type,'F')==1
+        summary_ind_data(i,3)=1;
+        
         yrange=max(data(:,2));
         normdata=100*avg_data(:,2)/yrange;
-        ind_match_data.(['S' SID]).(['M' elec]).scaled=cat(2,avg_data(:,1),normdata);
+        ind_match_data.(['S' SID]).(['M' elec]).(type).scaled=cat(2,avg_data(:,1),normdata);
         axes(h1)
         
         allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(avg_data(:,1),avg_data(:,2));
@@ -604,22 +874,24 @@ for i=1:length(datafiles)
         yfit=p(1)+p(2).*xfit;
         
         hold on
-        scatter(h1,avg_data(:,1), avg_data(:,2),40,col(q1,:));
+        scatter(h1,avg_data(:,1), avg_data(:,2),40,col(q1,:),'fill');
 %         scatter(h1,avg_data(:,1), normdata,40,col(q1,:));
-        plot(h1,xfit,yfit,'Color',col(q1,:));
+        plot(h1,xfit,yfit,'Color',col(q1,:),'LineWidth',2);
         errorbar(std_data(:,1),avg_data(:,2),std_data(:,2),'Marker','none','LineStyle','none','LineWidth',2,'Color',col(q1,:))
         hold off
         leg1txt=cat(2,leg1txt,[SID ' M' elec]);
-        leg1txt=cat(2,leg1txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted)]);
+        leg1txt=cat(2,leg1txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted,'%1.2f')]);
         leg1txt=cat(2,leg1txt,' ');
         q1=q1+1;
     elseif strcmp(type,'P')==1
+        summary_ind_data(i,3)=2;
+        
         pwrange=max(avg_data(:,1))-min(avg_data(:,1));
 %         temp=100*(avg_data(:,1)-min(avg_data(:,1)))/pwrange;
         temp=avg_data(:,1)-min(avg_data(:,1));
         yrange=max(data(:,2));
         normdata=100*avg_data(:,2)/yrange;
-        ind_match_data.(['S' SID]).(['M' elec]).scaled=cat(2,temp,normdata);
+        ind_match_data.(['S' SID]).(['M' elec]).(type).scaled=cat(2,temp,normdata);
         axes(h2)
         
         allmdls.(['s' SID]).(['M' elec])=LinearModel.fit(temp,avg_data(:,2));
@@ -629,15 +901,22 @@ for i=1:length(datafiles)
         yfit=p(1)+p(2).*xfit;
         
         hold on
-        scatter(h2,temp, avg_data(:,2),40,col(q2,:));
-        plot(h2,xfit,yfit,'Color',col(q2,:));
+        scatter(h2,temp, avg_data(:,2),40,col(q2,:),'fill');
+        plot(h2,xfit,yfit,'Color',col(q2,:),'LineWidth',2);
          errorbar(temp,avg_data(:,2),std_data(:,2),'LineWidth',2,'Color',col(q2,:),'Marker','none','LineStyle','none')
         hold off
         leg2txt=cat(2,leg2txt,[SID ' M' elec]);
-        leg2txt=cat(2,leg2txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted)]);
+        leg2txt=cat(2,leg2txt,['Rsq=' num2str(allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted,'%1.2f')]);
         leg2txt=cat(2,leg2txt,' ');
         q2=q2+1;
     end
+    
+    summary_ind_data(i,4)=p(1);
+    summary_ind_data(i,5)=p(2);
+    summary_ind_data(i,6)=mean(std_data(:,2));
+    summary_ind_data(i,7)=allmdls.(['s' SID]).(['M' elec]).Rsquared.Adjusted;
+    
+    
     xlabel(h1,'Frequency (Hz)','FontSize',14)
     ylabel(h1,'Indentation Depth (um)','FontSize',14)
     axis(h1,[0 180 0 9000])
@@ -650,75 +929,136 @@ end
     
  legend(h1,leg1txt,'Location','EastOutside','FontSize',14);   
  legend(h2,leg2txt,'Location','EastOutside','FontSize',14);
+ set(h1,'Box','off')
+ set(h2,'Box','off')
  title(h1,'Matching indentation depth to stimulation frequency','FontSize',16)
  title(h2,'Matching indentation depth to stimulation PW','FontSize',16)
- 
 
+ %restructure data
+ %need to restructure data in order to feed into bar()
+ sort_data=sortrows(summary_ind_data,[2 3]);
+%find out which data goes togehter - based on subject and contact - here
+%can just use contact because none of the contacts were the same betweeen
+%subjects
+delec=cat(1,abs(sort_data(2:end,2)-sort_data(1:(end-1),2)),0);
+
+c1=1;
+barticks={['S' num2str(sort_data(1,1)) ' M' num2str(sort_data(1,2))]};
+
+for k=1:size(sort_data,1)
+    if sort_data(k,3)==1 %freq
+            yint_f(c1,1)=sort_data(k,4);
+            m_f(c1,1)=sort_data(k,5);
+            msem_f(c1,1)=sort_data(k,6);
+        
+    elseif sort_data(k,3)==2 %pw
+        yint_pw(c1,1)=sort_data(k,4);
+            m_pw(c1,1)=sort_data(k,5);
+            msem_pw(c1,1)=sort_data(k,6);
+    end
+    if  delec(k)>0
+        c1=c1+1;
+        barticks=cat(2,barticks,['S' num2str(sort_data(k,1)) ' M' num2str(sort_data(k,2))]);
+        %         barticks=cat(2,barticks,sprintf('S%d M%d\n%d',sort_data(k,1),sort_data(k,1),sort_data(k,3)));
+    end
+end
+%make sure all 3 groups are the same length
+yint_f(length(yint_f)+1:c1)=0;
+yint_pw(length(yint_pw)+1:c1)=0
+bar_yint=cat(2,yint_f,  yint_pw);
+
+m_f(length(m_f)+1:c1)=0;
+m_pw(length(m_pw)+1:c1)=0;
+bar_m=cat(2,m_f,  m_pw);
+
+msem_f(length(msem_f)+1:c1)=0;
+msem_pw(length(msem_pw)+1:c1)=0;
+bar_msem=cat(2,msem_f,  msem_pw);
+
+%summary stats
+avg_yint(1)=mean(yint_f(yint_f>0));
+std_yint(1)=std(yint_f(yint_f>0))/sqrt(length(yint_f(yint_f>0)));
+avg_yint(2)=mean(yint_pw(yint_pw>0));
+std_yint(2)=std(yint_pw(yint_pw>0))/sqrt(length(yint_pw(yint_pw>0)));
+
+avg_m(1)=mean(m_f(m_f>0));
+std_m(1)=std(m_f(m_f>0))/sqrt(length(m_f(m_f>0)));
+avg_m(2)=mean(m_pw(m_pw>0));
+std_m(2)=std(m_pw(m_pw>0))/sqrt(length(m_pw(m_pw>0)));
+
+avg_msem(1)=mean(msem_f(msem_f>0));
+std_msem(1)=std(msem_f(msem_f>0))/sqrt(length(msem_f(msem_f>0)));
+avg_msem(2)=mean(msem_pw(msem_pw>0));
+std_msem(2)=std(msem_pw(msem_pw>0))/sqrt(length(msem_pw(msem_pw>0)));
+
+
+data_head={'SID','elec','param','p1','p2','avg_SEM','R2'};
 %save everything
 cd('C:\Users\Emily\Documents\MATLAB\JND Intensity');
-save('all_indmatch_data.mat','allmdls','ind_match_data')
-
-clear all
-
-%% Transform JND curves into indentation depth space
-
-load('all_indmatch_data.mat')
-
-load('all_data_intensityJND.mat')
-clear summary_head summary_data bar_data sort_data
-
-%in order to iterate, must know the field names of alldata
-fname=fieldnames(alldata);
+save('all_indmatch_data.mat','allmdls','ind_match_data','summary_ind_data','data_head','avg_yint','std_yint','avg_m','std_m','avg_msem','std_msem','bar_yint','bar_m','bar_msem')
+save('datafor_minitab_inddata.txt','summary_ind_data','-ascii');
+save('datafor_minitab_inddata_avgs.txt','summary_stat','-ascii');
 
 
-for i=1:length(fname)
-    p=[];
-    SID=alldata.(fname{i}).SID;
-    elec=['M' alldata.(fname{i}).elec];
-    type= alldata.(fname{i}).type;
-    if type==1 %freq discrim
-        %make sure that there is a mapping for this subject/contact combo
-        if  isfield(allmdls.(['s' SID]),elec)
-        temp=dataset2cell(allmdls.(['s' SID]).(elec).freq.Coefficients(:,1));
-        p=cell2mat(temp(2:end,2));
-        
-        end
-    else %pw discrim
-        %make sure that there is a mapping for this subject/contact combo
-        if  isfield(allmdls.(['s' SID]),elec)
-            %should I leave pw scaled to 0-100% of range, or transform back
-            %to microseconds?
-            %here, fitting a model to raw pw data (in us)
-            abspwmdls.(['s' SID]).(elec)=LinearModel.fit(ind_match_data.(['S' SID]).(elec).data(:,1),ind_match_data.(['S' SID]).(elec).data(:,2));
-        temp=dataset2cell(abspwmdls.(['s' SID]).(elec).Coefficients(:,1));
-        p=cell2mat(temp(2:end,2));
-        
-        end
-    end
-    if isfield(allmdls.(['s' SID]),elec)
-        alldata.(fname{i}).inddepth=p(1)+p(2).*alldata.(fname{i}).testlist;
-        figure
-        scatter(alldata.(fname{i}).inddepth,alldata.(fname{i}).percentage)
-        xfit=[0:1:alldata.(fname{i}).inddepth(end)+100];
-        xlabel('Indentation depth (um)')
-        ylabel('Percentage of "test stimulus stronger" responses (%)')
-        if type==1
-        title(['S' SID ' M' elec 'Frequency discrimination'])
-        else
-            title(['S' SID ' ' elec 'PW discrimination'])
-        end
-    end
+% %% Transform JND curves into indentation depth space
+% 
+% load('all_indmatch_data.mat')
+% 
+% load('all_data_intensityJND.mat')
+% clear summary_head summary_data bar_data sort_data
+% 
+% %in order to iterate, must know the field names of alldata
+% fname=fieldnames(alldata);
+% 
+% 
+% for i=1:length(fname)
+%     p=[];
+%     SID=alldata.(fname{i}).SID;
+%     elec=['M' alldata.(fname{i}).elec];
+%     type= alldata.(fname{i}).type;
+%     if type==1 %freq discrim
+%         %make sure that there is a mapping for this subject/contact combo
+%         if  isfield(allmdls.(['s' SID]),elec)
+%         temp=dataset2cell(allmdls.(['s' SID]).(elec).freq.Coefficients(:,1));
+%         p=cell2mat(temp(2:end,2));
+%         
+%         end
+%     else %pw discrim
+%         %make sure that there is a mapping for this subject/contact combo
+%         if  isfield(allmdls.(['s' SID]),elec)
+%             %should I leave pw scaled to 0-100% of range, or transform back
+%             %to microseconds?
+%             %here, fitting a model to raw pw data (in us)
+%             abspwmdls.(['s' SID]).(elec)=LinearModel.fit(ind_match_data.(['S' SID]).(elec).data(:,1),ind_match_data.(['S' SID]).(elec).data(:,2));
+%         temp=dataset2cell(abspwmdls.(['s' SID]).(elec).Coefficients(:,1));
+%         p=cell2mat(temp(2:end,2));
+%         
+%         end
+%     end
+%     if isfield(allmdls.(['s' SID]),elec)
+%         alldata.(fname{i}).inddepth=p(1)+p(2).*alldata.(fname{i}).testlist;
+%         figure
+%         scatter(alldata.(fname{i}).inddepth,alldata.(fname{i}).percentage)
+%         xfit=[0:1:alldata.(fname{i}).inddepth(end)+100];
+%         xlabel('Indentation depth (um)')
+%         ylabel('Percentage of "test stimulus stronger" responses (%)')
+%         if type==1
+%         title(['S' SID ' M' elec 'Frequency discrimination'])
+%         else
+%             title(['S' SID ' ' elec 'PW discrimination'])
+%         end
+%     end
+% 
+% end
 
-end
-
-%Plot subject bias data - in separate sections for ref=test and ref~=test
+%% Plot subject bias data - in separate sections for ref=test and ref~=test
 eq_reftest=load('datafor_minitab_ref_eq_test_trials.txt','-ascii');
 dif_reftest=load('datafor_minitab_ref_diff_test_trials.txt','-ascii');
 
 avg_eq=mean(eq_reftest(:,8));
-std_eq=(std(eq_reftest(:,8))/size(eq_reftest,1));
+std_eq=(std(eq_reftest(:,8))/sqrt(size(eq_reftest,1)));
 avg_dif=mean(dif_reftest(:,8));
-std_dif=(std(dif_reftest(:,8))/size(dif_reftest,1));
+std_dif=(std(dif_reftest(:,8))/sqrt(size(dif_reftest,1)));
 
 avgs=cat(1,0.5, avg_eq-1,avg_dif-1);
 stds=cat(1,0,std_eq,std_dif);

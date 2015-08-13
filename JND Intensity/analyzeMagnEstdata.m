@@ -13,8 +13,10 @@ cd(datadir)
 cd(pathName)
 
 outdir=pathName(1:end-5);
+q=1;
 
 %this will loop through all the data files
+w=1;
 for k=1:length(datafiles)
     load(datafiles{k}); %load data
     %get basic info from the file
@@ -22,6 +24,7 @@ for k=1:length(datafiles)
     elec=cell2mat(MyData.Contact);
     expdate=datestr(datevec(MyData.DateVal),'yyyymmdd');
     expname=['Exp' datestr(datevec(datafiles{k}(11:end-4),'yyyy-mm-dd T HH.MM.SSPM'),'yyyymmddHHMMSS')];
+    
     
     %arrange relevant data into a single matrix
     n=length(MyData.Response);
@@ -136,6 +139,8 @@ for k=1:length(datafiles)
     sorted.datacond2=datacond2;
     sorted.datacond3=datacond3;
     for i=1:3
+       
+        %find rows where the stim parameters change
         if i==2
             ind_delta=find((sorted.(['datacond' num2str(i)])(2:end,2)-sorted.(['datacond' num2str(i)])(1:end-1,2))>0);
         else
@@ -143,53 +148,187 @@ for k=1:length(datafiles)
             
         end
         ind_delta=cat(1,0,ind_delta);
-        
+        %iterate through each of the rows identified above, calculate means
+        %and standard deviations and save to avgs
         for j=2:length(ind_delta)+1
             if j==length(ind_delta)+1
                 
-                if i==2
-                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,2);
-                else
-                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,3);
-                end
-                avgs.(['cond' num2str(i)])(j-1,2)=mean(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5));
-                avgs.(['cond' num2str(i)])(j-1,3)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5))/(ind_delta(j)-ind_delta(j-1)+1);
+%                 if i==2
+%                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,2);
+%                 else
+%                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,3);
+%                 end
+
+
+                %freq
+                avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,2);
+                %pw
+                avgs.(['cond' num2str(i)])(j-1,2)=sorted.(['datacond' num2str(i)])(end,3);
+                %average of perceived magnitude values
+                avgs.(['cond' num2str(i)])(j-1,3)=mean(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5));
+                %standard error of the mean
+                avgs.(['cond' num2str(i)])(j-1,4)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5))/sqrt((ind_delta(end)-ind_delta(j-1)+1));
+            
             else
-                if i==2
-                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),2);
-                else
-                    avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),3);
-                end
-                avgs.(['cond' num2str(i)])(j-1,2)=mean(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:ind_delta(j),5));
-                avgs.(['cond' num2str(i)])(j-1,3)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:ind_delta(j),5))/(ind_delta(j)-ind_delta(j-1)+1);
+%                 if i==2
+%                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),2);
+%                 else
+%                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),3);
+%                 end
+                %freq
+                avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),2);
+                %pw
+                avgs.(['cond' num2str(i)])(j-1,2)=sorted.(['datacond' num2str(i)])(ind_delta(j),3);
+                avgs.(['cond' num2str(i)])(j-1,3)=mean(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:ind_delta(j),5));
+                avgs.(['cond' num2str(i)])(j-1,4)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:ind_delta(j),5))/sqrt((ind_delta(j)-ind_delta(j-1)+1));
            
             end
         end
-        figure
+        f=figure;
         hold on
         if i==2
             scatter(sorted.datacond2(:,2),sorted.datacond2(:,5))
-            title(['S' SID ' M' elec ' Condition 2 - PW constant, freq variable'])
-            xlabel('Frequency (Hz)')
+            errorbar(avgs.(['cond' num2str(i)])(:,1),avgs.(['cond' num2str(i)])(:,3), avgs.(['cond' num2str(i)])(:,4),'o','Color','r','LineWidth',2);
+            title(['S' SID ' M' elec ' Condition 2 - PW constant, freq variable'],'FontSize',14)
+            xlabel('Frequency (Hz)','FontSize',14)
         else
             scatter(sorted.(['datacond' num2str(i)])(:,3),sorted.(['datacond' num2str(i)])(:,5))
-            xlabel('PW (us)')
+            errorbar(avgs.(['cond' num2str(i)])(:,2),avgs.(['cond' num2str(i)])(:,3), avgs.(['cond' num2str(i)])(:,4),'o','Color','r','LineWidth',2);
+            xlabel('PW (us)','FontSize',14)
             if i==1
-                title(['S' SID ' M' elec ' Condition 1 - PW variable, freq constant'])
+                title(['S' SID ' M' elec ' Condition 1 - PW variable, freq constant'],'FontSize',14)
             else
-                title(['S' SID ' M' elec ' Condition 3 - both PW and freq variable'])
+                title(['S' SID ' M' elec ' Condition 3 - both PW and freq variable'],'FontSize',14)
             end
         end
         
-        errorbar(avgs.(['cond' num2str(i)])(:,1),avgs.(['cond' num2str(i)])(:,2), avgs.(['cond' num2str(i)])(:,3),'o','Color','r','LineWidth',2);
-        ylabel('Perceived magnitude')
+        
+        ylabel('Perceived magnitude','FontSize',14)
         hold off
+        cd([outdir '\Figures'])
+        saveas(f,['S' SID 'M' elec 'cond' num2str(i) '.tif'])
+        cd(pathName)
+        
+        m=size(avgs.(['cond' num2str(i)]),1);
+        summdata(q:q+m-1,1)=str2num(SID);
+        summdata(q:q+m-1,2)=str2num(elec);
+        summdata(q:q+m-1,3)=i;
+        summdata(q:q+m-1,4:7)=avgs.(['cond' num2str(i)]);
+        q=q+m;
     end
     
+    alldata.(expname).avgs=avgs;
     
+    %% Fit power function
+    %y=cx^b + a
+    
+    p=zeros(1,4);
+    R2=0;
+    for i=1:3
+        ydata=alldata.(expname).avgs.(['cond' num2str(i)])(:,3);
+        xdataf=alldata.(expname).avgs.(['cond' num2str(i)])(:,1);
+        xdatapw=alldata.(expname).avgs.(['cond' num2str(i)])(:,2);
+        %conditions 1 and 3 - fit models with PW varying
+        if i==1 || i==3%pw only
+            MSE=inf;
+            for k=1:10
+                try
+        th1=rand()*2000-1800; %y int
+        th2=rand()*100; %coeff
+        th3=rand()*2-1; %power
+        th4=rand()*3000-2000; %x offset
+        
+        thIN=[th1 th2 th3 th4]; %vector of theta estimates, to put in lsqcurvefit
+        
+            xdata=xdatapw-xdatapw(1);
+                F=@(p,xdata) (p(1)+ p(2).*(xdata-p(4)).^p(3));
+                alldata.(expname).mdl.(['cond' num2str(i)]).PW=NonLinearModel.fit(xdata,ydata,F,thIN);
+                if alldata.(expname).mdl.(['cond' num2str(i)]).PF.MSE< MSE;
+                temp=dataset2cell(alldata.(expname).mdl.(['cond' num2str(i)]).PW.Coefficients(:,1));
+                p=cell2mat(temp(2:end,2));
+                MSE=alldata.(expname).mdl.(['cond' num2str(i)]).PW.MSE;
+                R2=alldata.(expname).mdl.(['cond' num2str(i)]).PW.Rsquared.Adjusted;
+                alldata.(expname).mdl.(['cond' num2str(i)]).PWdata.ydata=ydata;
+                alldata.(expname).mdl.(['cond' num2str(i)]).PWdata.xdata=xdata;
+                end
+                catch
+                end
+                
+            end
+             summary_data(w,1)=str2num(SID);
+    summary_data(w,2)=str2num(expdate);
+    summary_data(w,3)=str2num(elec);
+%     summary_data(w,4)=str2num(datestr(datevec(datafiles{k}(11:end-4),'yyyy-mm-dd T HH.MM.SSPM'),'yyyymmddHHMMSS'));
+    summary_data(w,5)=i;
+            summary_data(w,6)=2; %fit model with PW
+                summary_data(w,7:10)=p;
+                summary_data(w,12)=MSE;
+                summary_data(w,11)=R2;
+                w=w+1;
+                
+                xfit=[0:0.01:300];
+                yfit=(p(1)+ p(2).*(xfit-p(4)).^p(3));
+                figure
+                hold on
+                scatter(xdata,ydata)
+            errorbar(avgs.(['cond' num2str(i)])(:,2),avgs.(['cond' num2str(i)])(:,3), avgs.(['cond' num2str(i)])(:,4),'o','Color','r','LineWidth',2);
+                plot(xfit,yfit)
+                title([SID elec ' cond' num2str(i)])
+                axis([0 300 0 100])
+                hold off
+        end
+        %conditions 2 and 3 - fit models with F varying
+        if i==2 || i==3 %f only
+            MSE=inf;
+            for k=1:10
+                try
+         th1=rand()*2000-1800; %y int
+        th2=rand()*20; %coeff
+        th3=rand()*2-1; %power
+        th4=rand()*3000-2000; %x offset
+        
+        thIN=[th1 th2 th3 th4]; %vector of theta estimates, to put in lsqcurvefit
+        
+                xdata=xdataf;
+                F=@(p,xdata) (p(1)+ p(2).*(xdata-p(4)).^p(3));
+                alldata.(expname).mdl.(['cond' num2str(i)]).PF=NonLinearModel.fit(xdata,ydata,F,thIN);
+                if alldata.(expname).mdl.(['cond' num2str(i)]).PF.MSE< MSE;
+                temp=dataset2cell(alldata.(expname).mdl.(['cond' num2str(i)]).PF.Coefficients(:,1));
+                p=cell2mat(temp(2:end,2));
+                MSE=alldata.(expname).mdl.(['cond' num2str(i)]).PF.MSE;
+                R2=alldata.(expname).mdl.(['cond' num2str(i)]).PF.Rsquared.Adjusted;
+                alldata.(expname).mdl.(['cond' num2str(i)]).PFdata.ydata=ydata;
+                alldata.(expname).mdl.(['cond' num2str(i)]).PFdata.xdata=xdata; 
+                end
+                catch
+                end
+            end
+             summary_data(w,1)=str2num(SID);
+    summary_data(w,2)=str2num(expdate);
+    summary_data(w,3)=str2num(elec);
+%     summary_data(w,4)=str2num(datestr(datevec(datafiles{k}(11:end-4),'yyyy-mm-dd T HH.MM.SSPM'),'yyyymmddHHMMSS'));
+    summary_data(w,5)=i;
+            summary_data(w,6)=1; %fit model with PF
+                summary_data(w,7:10)=p;
+                summary_data(w,12)=MSE;
+                summary_data(w,11)=R2;
+                w=w+1;
+                
+                xfit=[0:0.01:300];
+                yfit=(p(1)+ p(2).*(xfit-p(4)).^p(3));
+                figure
+                hold on
+                scatter(xdata,ydata)
+                errorbar(avgs.(['cond' num2str(i)])(:,1),avgs.(['cond' num2str(i)])(:,3), avgs.(['cond' num2str(i)])(:,4),'o','Color','r','LineWidth',2);
+                plot(xfit,yfit)
+                title([SID elec ' cond' num2str(i)])
+                axis([0 300 0 100])
+                hold off
+        end
+    end
     
 end
 
 cd(outdir)
-save(['Analysis' datestr(now) '.mat'],'fits','alldata')
+save(['Analysis' datestr(now,'yyyymmddHHMMSS') '.mat'],'alldata')
 cd(defaultdir)
