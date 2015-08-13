@@ -642,7 +642,8 @@ for k=2:length(idelec) %num of unique contacts - first one is a dummy index for 
                 end
                 
                 runs=fieldnames(allpooled.(SID).(elec).(conds{i}).individ);
-                pooled_data(q,6:8)=allpooled.(SID).(elec).(conds{i}).individ.(runs{1}).fitparams;
+                p=allpooled.(SID).(elec).(conds{i}).individ.(runs{1}).fitparams;
+                pooled_data(q,6:8)=p;
                 pooled_data(q,12)=allpooled.(SID).(elec).(conds{i}).individ.(runs{1}).Rsq;
             end
             
