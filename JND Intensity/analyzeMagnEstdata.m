@@ -105,7 +105,7 @@ for k=1:length(datafiles)
                 avgs.(['cond' num2str(i)])(j-1,4)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5))/sqrt((ind_delta(end)-ind_delta(j-1)+1));
                 
             else
-                               end
+                              
                 %freq
                 avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),2);
                 %pw
@@ -225,11 +225,35 @@ for k=1:length(datafiles)
             w=w+1;
             
             %Plotting
-            figure
-            hold on
             xfit=[0:0.01:300];
             %add back in values
             p(1)=p(1)+ydataraw(1);
+            yfit=(p(1)+ (p(2).*(xfit-p(4)).^p(3)).*heaviside(xfit-p(4)));
+            %plot in one figure
+            if i==1
+                axes(h1)
+                hold on
+            elseif i==2
+                axes(h2)
+                hold on
+            else
+                if s==1
+                    axes(h3)
+                    hold on
+                else
+                    axes(h4)
+                    hold on
+                end
+            end
+                scatter(xdata,ydata+ydataraw(1),40,col(k,:))
+                plot(xfit,yfit,'Color',col(k,:))
+                hold off
+                
+             %plot individually   
+            figure
+            hold on
+            
+            
             if i==2 || s==2
                 p(4)=p(4)+xdataf(1);
                 scatter(xdata+xdataf(1),ydata+ydataraw(1))
@@ -255,6 +279,15 @@ for k=1:length(datafiles)
     
     
 end
+xlabel(h1,'PW-PWth (\mus)')
+xlabel(h2,'Frequency (Hz)')
+xlabel(h3,'PW-PWth (\mus)')
+xlabel(h4,'Frequency (Hz)')
+axis(h1,[0 100 0 100])
+axis(h2,[0 200 0 100])
+axis(h3,[0 100 0 100])
+axis(h4,[0 200 0 100])
+
 
 cd(outdir)
 save(['Analysis' datestr(now,'yyyymmddHHMMSS') '.mat'],'alldata')
