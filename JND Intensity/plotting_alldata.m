@@ -15,9 +15,11 @@ col=[1 0.647059 0; 0.12549 0.698039 0.666667;0.690196 0.188235 0.376471];
 %Use S102 M3 as example:
 %rows in summary-data: 6,7,8
 %to plot both frequency examples together
-f=figure;
-h=axes('Parent',f);
+fpf=figure;
+h=axes('Parent',fpf);
 leg={};
+
+%make plots of individual examples
 for k=[3, 7, 13] %[1,2,11]
     ref=summary_data(k,5);
     SID=num2str(summary_data(k,1));
@@ -44,16 +46,22 @@ for k=[3, 7, 13] %[1,2,11]
     hold on
     if summary_data(k,4)==1
         scatter(figs.(['H' num2str(k)]),xdata,ydata,70,[0.11 0.65 1],'fill');
-        plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3, 'Color', [0.28 0.23 0.54])
+        plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',2, 'Color', [0.28 0.23 0.54])
+        text(0,0.2,['y = $\displaystyle\frac{' num2str(p(1)/100,'%1.2f') '*(1-erf(x+' num2str(abs(p(2)),'%1.1f') '))}{(' num2str(p(3),'%1.1f') '\sqrt{2} )}$'],'Interpreter','latex','FontName','Helvetica','FontSize',12);
+        text(0,0.1,['R$^{2}$ = ' num2str(R2,'%1.2f')],'interpreter','latex','FontSize',12)
     else
         scatter(figs.(['H' num2str(k)]),xdata,ydata,70,[1 0.54902 0],'fill');
-        plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',3, 'Color', col(1,:));
+        plot(figs.(['H' num2str(k)]),xfit,yfit,'LineWidth',2, 'Color', col(1,:));
+        text(0,0.2,['y = $\displaystyle\frac{' num2str(p(1)/100,'%1.2f') '*(1-erf(x+' num2str(abs(p(2)),'%1.1f') '))}{(' num2str(p(3),'%1.1f') '\sqrt{2} )}$)'],'Interpreter','latex','FontName','Helvetica','FontSize',12);
+        text(0,0.1,['R$^{2}$ = ' num2str(R2,'%1.2f')],'interpreter','latex','FontSize',12)
     end
+    
     %     scatter(figs.(['H' num2str(k)]),xdata(5),teststrongperc(5),70,[0.8 0 0],'fill');
     %     l1=legend(['Fit, Cumulative distribution'; ['function, Rsq = ' num2str(R2,'%1.2f') '        ']],'Raw data', ['Percentage of "second stimulus'; 'stronger" responses (%)       ']);
     %     l1=legend('Raw data',['Fit, Cumulative distribution'; ['function, Rsq = ' num2str(R2,'%1.2f') '        ']]);
     %     set(l1,'Location','SouthEast','FontSize',15,'FontName','Calibri')
     %     set(l1,'Box','off')
+     
     
     hold off
     ylabel(figs.(['H' num2str(k)]),'P(test stimulus stronger)','FontSize', 14);
@@ -64,19 +72,23 @@ for k=[3, 7, 13] %[1,2,11]
         if summary_data(k,5)==50 %k==1
             hLine=scatter(h,xdata,ydata,70,[0.282353 0.819608 0.8],'fill');
             set(get(get(hLine,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-            plot(h,xfit,yfit,'LineWidth',3, 'Color', col(2,:));
+            plot(h,xfit,yfit,'LineWidth',2, 'Color', col(2,:));
             leg=cat(1,leg,'50 Hz reference');
+            text(5,0.55,['y$_{50}$ = $\displaystyle\frac{' num2str(p(1)/100,'%1.2f') '*(1-erf(x+' num2str(abs(p(2)),'%1.1f') '))}{(' num2str(p(3),'%1.1f') '\sqrt{ 2} )}$'],'Interpreter','latex','FontName','Helvetica','FontSize',12);
+            text(5,0.45,['R$^{2}$ = ' num2str(R2,'%1.2f')],'interpreter','latex','FontSize',12)
         else
             hLine=scatter(h,xdata,ydata,70,[1 0.41 0.7],'fill');
             set(get(get(hLine,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-            plot(h,xfit,yfit,'LineWidth',3, 'Color', col(3,:));
+            plot(h,xfit,yfit,'LineWidth',2, 'Color', col(3,:));
             leg=cat(1,leg,'100 Hz reference');
+            text(-80,0.90,['y$_{100}$ = $\displaystyle\frac{' num2str(p(1)/100,'%1.2f') '*(1-erf(x+' num2str(abs(p(2)),'%1.1f') '))}{(' num2str(p(3),'%1.1f') '\sqrt{ 2} )}$'],'Interpreter','latex','FontName','Helvetica','FontSize',12);
+            text(-80,0.8,['R$^{2}$ = ' num2str(R2,'%1.2f')],'interpreter','latex','FontSize',12)
         end
         hold off
     end
     
     l2=legend(h,leg);
-    set(l2,'Location','SouthEast','FontSize',15,'FontName','Calibri')
+    set(l2,'Location','SouthEast','FontSize',15)
     set(l2,'Box','off')
     xlabel(h,'Test PF (%)','FontSize',14);
     ylabel(h,'P(test stimulus stronger)','FontSize', 14);
@@ -123,8 +135,8 @@ for i=1:size(pooled_data,1)
 end
 avgjnd=[];
 
-f=figure;
-h=axes('Parent',f);
+fbar=figure;
+h=axes('Parent',fbar);
 
 alljnd=[];
 allsemjnd=[];
@@ -211,7 +223,7 @@ for i=1:length(types)
     ylabel('P(test stimulus stronger)','FontName','Arial','FontSize',14)
     if strcmp('PW',types{i})
          xlabel('Test PW (%)','FontName','Arial','FontSize',14)
-         axis([-50 50 0 1])
+         axis([-40 40 0 1])
     else
         xlabel('Test PF (%)','FontName','Arial','FontSize',14)
         axis([-100 100 0 1])
@@ -222,23 +234,25 @@ for i=1:length(types)
     semyfit=std(allyfit)/sqrt(size(allyfit,1));
     avgcurves.(types{i})=cat(1,avgyfit,semyfit);
     
-    f2=figure;
+    figs.agg.(types{i})=figure;
     hold on
     patch([avgxfit fliplr(avgxfit)],[avgyfit+semyfit fliplr(avgyfit-semyfit)],col(c1,:),'EdgeColor','none','FaceAlpha',0.8)
     plot(avgxfit, avgyfit,'LineWidth',2,'Color','k')
     ylabel('P(test stimulus stronger)','FontName','Arial','FontSize',14)
 %     title([types{i} ' Average and std dev of curves'])
     if strcmp('PW',types{i})
+%          text(20,0.2,['n=' num2str(size(allyfit,1))],'FontSize',14)
          xlabel('Test PW (%)','FontName','Arial','FontSize',14)
-         axis([-50 50 0 1])
+         axis([-40 40 0 1])
     else
+%         text(40,0.2,['n=' num2str(size(allyfit,1))],'FontSize',14)
         xlabel('Test PF (%)','FontName','Arial','FontSize',14)
         axis([-100 100 0 1])
     end
     
     hold off
     saveas(f1,['all' types{i} 'discrim.tif']);
-    saveas(f2,['all' types{i} 'discrim_avgsem.tif']);
+    saveas(figs.agg.(types{i}),['all' types{i} 'discrim_avgsem.tif']);
     c1=c1+1;
 end
 
@@ -266,6 +280,39 @@ end
     set(leg,'Location','SouthEast','FontSize',15,'FontName','Calibri')
     set(leg,'Box','off')
 
+    
+    %%
+    %set up plot with subpanels
+psdfig=figure;
+ax=zeros(6,1);
+for i=1:6
+    ax(i)=subplot(3,2,i);
+end
+k=[7, 3,13];
+types={'F100','PW','F50'};
+
+for i=1:6
+    if i==1
+        figure(fpf)
+    end
+    if i==2
+        figure(figs.(['F' num2str(k(i))]));
+    end
+    if i==3 || i==4 || i==5
+        figure(figs.agg.(types{i-2}));
+    end
+    if i==6
+        figure(fbar);
+    end
+    h=get(gcf,'Children');
+    newh=copyobj(h,psdfig);
+    for j=1:length(newh)
+            posnewh=get(newh(j),'Position');
+            possub=get(ax(i),'Position');
+            set(newh(j),'Position',[possub(1) possub(2) possub(3) possub(4)])
+    end
+    delete(ax(i))
+end
 %% Indentation matching
 %104 M6: rows 7 and 8 in summary_ind_data
 clear all
@@ -278,6 +325,7 @@ load('all_indmatch_data.mat');
 for i=[7 8]
     SID=num2str(summary_ind_data(i,1));
     elec=num2str(summary_ind_data(i,2));
+    R2=summary_ind_data(i,7);
     if summary_ind_data(i,3)==1
         type='F';
     else
@@ -297,6 +345,8 @@ for i=[7 8]
         xlabel('PF (Hz)','FontSize',14)
         ylabel('Indentation Depth (\mum)','FontSize',14)
         axis([0 180 0 1200])
+        text(70,400,['y = ' num2str(p(1),'%1.2f') ' + ' num2str(p(2),'%1.2f') '*x'],'Interpreter','latex','FontName','Helvetica','FontSize',13);
+        text(70,300,['R$^{2}$ = ' num2str(R2,'%1.2f')],'interpreter','latex','FontSize',13)
         hold off
         saveas(f,'exmp_indmatch_freq.tif')
     else
@@ -309,6 +359,8 @@ for i=[7 8]
         xlabel('PW (\mus)','FontSize',14)
         ylabel('Indentation Depth (\mum)','FontSize',14)
         axis([avg_data(1,1)-10 avg_data(end,1)+10 0 2000])
+        text(150,1600,['y = ' num2str(p(1),'%1.2f') ' + ' num2str(p(2),'%1.2f') '*x'],'Interpreter','latex','FontName','Helvetica','FontSize',13);
+        text(150,1400,['R$^{2}$ = ' num2str(R2,'%1.2f')],'interpreter','latex','FontSize',13)
         hold off
         saveas(f,'exmp_indmatch_pw.tif')
     end

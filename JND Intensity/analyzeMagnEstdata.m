@@ -13,32 +13,47 @@ cd(datadir)
 cd(pathName)
 
 outdir=pathName(1:end-5);
-q=1;
+q=1; %for indexing
+%set up figure with subpanels
+spf=figure;
+h1=subplot(2,2,1);
+h2=subplot(2,2,2);
+h3=subplot(2,2,3);
+h4=subplot(2,2,4);
+%set up colors to be used for all plotting
+col=[1 0.647059 0; 0.12549 0.698039 0.666667;0.690196 0.188235 0.376471;0 0.1 .5];
 
 %this will loop through all the data files
-w=1;
+w=1; %for indexing
 for k=1:length(datafiles)
     load(datafiles{k}); %load data
     %get basic info from the file
     SID=MyData.PatientID;
     elec=cell2mat(MyData.Contact);
+    PA=MyData.UpperPA(1,1);
     expdate=datestr(datevec(MyData.DateVal),'yyyymmdd');
     expname=['Exp' datestr(datevec(datafiles{k}(11:end-4),'yyyy-mm-dd T HH.MM.SSPM'),'yyyymmddHHMMSS')];
     
     
     %arrange relevant data into a single matrix
     n=length(MyData.Response);
-    %normalize data - normalize for each block of data
+    %normalize data - normalize for each block of data separately
     br_pts=[0 68 135 203 270]; %trials after which a break was taken
-    resp=[];
+    
+    resp=[]; %initialize
+    %loop through the blocks
     for j=2:length(br_pts)
-        if br_pts(j)<n
+        if br_pts(j)<n %experiment included this block
+            %find the maximum response value for that block
             setmax(j-1)=max(MyData.Response(br_pts(j-1)+1:br_pts(j)));
+            %normalize the data within that block to the maximum value
             resp(br_pts(j-1)+1:br_pts(j))=(MyData.Response(br_pts(j-1)+1:br_pts(j))/setmax(j-1))*100;
-        elseif br_pts(j)==n
+        elseif br_pts(j)==n %experiment ended on this block
+            %find the maximum response value for that block
             setmax(j-1)=max(MyData.Response(br_pts(j-1)+1:n));
+            %normalize the data within that block to the maximum value
             resp(br_pts(j-1)+1:n)=(MyData.Response(br_pts(j-1)+1:n)/setmax(j-1))*100;
-        else
+        else %experiment ended mid-block = do not analyze any data from that block
         end
     end
     
@@ -59,86 +74,26 @@ for k=1:length(datafiles)
     alldata.(expname).normdata.header={'Condition', 'UpperFreq','UpperPW','UpperPA','NormalizedResponse'};
     alldata.(expname).normdata.data=expdata;
     
-    %
-    %     figure
-    %     scatter([1:1:size(expdata,1)],expdata(:,5))
-    %     %     [fits.(expname).time, gof]=fit([1:1:size(expdata,1)],expdata(:,5));
-    %     title(['S' SID ' M' elec ' Effect of time'])
-    %     xlabel('Trial number')
-    %     ylabel('Perceived magnitude')
-    
+    %sort the data for division into conditions
     sortdata=sortrows(expdata,[1 2 3]);
     
+    %find the indexes of data for each condition
     ind_cond1=find(sortdata(:,1)==1);
     ind_cond2=find(sortdata(:,1)==2);
     ind_cond3=find(sortdata(:,1)==3);
-    
+    %pull out data from each condition into separate variables
     datacond1=sortdata(ind_cond1,:);
     datacond2=sortdata(ind_cond2,:);
     datacond3=sortdata(ind_cond3,:);
-    %
-    %     %condition 1 - PW variable, freq constant
-    %     [f, fits.(expname).cond1.gof]=fit(datacond1(:,3),datacond1(:,5),'poly1');
-    %     fits.(expname).cond1.coeff.names=coeffnames(f);
-    %     fits.(expname).cond1.coeff.coeff=coeffvalues(f);
-    %     x=[min(datacond3(:,3)):0.01:max(datacond3(:,3))];
-    %     y=fits.(expname).cond1.coeff.coeff(1).*x+fits.(expname).cond1.coeff.coeff(2);
-    %     figure
-    %     hold on
-    %     scatter(datacond1(:,3),datacond1(:,5))
-    %     plot(x,y)
-    %     hold off
-    %     title(['S' SID ' M' elec ' Condition 1 - PW variable, freq constant'])
-    %     xlabel('PW (us)')
-    %     ylabel('Perceived magnitude')
-    %
-    %     %condition 2 - PW constant, freq variable
-    %     [f, fits.(expname).cond2.gof]=fit(datacond2(:,2),datacond2(:,5),'poly1');
-    %     fits.(expname).cond2.coeff.names=coeffnames(f);
-    %     fits.(expname).cond2.coeff.coeff=coeffvalues(f);
-    %     x=[min(datacond3(:,2)):0.01:max(datacond3(:,2))];
-    %     y=fits.(expname).cond2.coeff.coeff(1).*x+fits.(expname).cond2.coeff.coeff(2);
-    %
-    %     figure
-    %     hold on
-    %     scatter(datacond2(:,2),datacond2(:,5))
-    %     plot(x,y)
-    %     hold off
-    %     title(['S' SID ' M' elec ' Condition 2 - PW constant, freq variable'])
-    %     xlabel('Frequency (Hz)')
-    %     ylabel('Perceived magnitude')
-    %
-    %     %     %condition 3 - both PW and freq variable
-    %     %     figure
-    %     %     scatter(datacond3(:,2), datacond3(:,5))
-    %     %     title('Condition 3 - Both PW and freq varying together')
-    %     %     xlabel('Frequency (Hz)')
-    %     %     ylabel('Perceived magnitude')
-    %     %
-    %     figure
-    %     hold on
-    %     [f, fits.(expname).cond3.gof]=fit(datacond3(:,3), datacond3(:,5),'poly1');
-    %     fits.(expname).cond3.coeff.names=coeffnames(f);
-    %     fits.(expname).cond3.coeff.coeff=coeffvalues(f);
-    %     x=[min(datacond3(:,3)):0.01:max(datacond3(:,3))];
-    %     y=fits.(expname).cond3.coeff.coeff(1).*x+fits.(expname).cond3.coeff.coeff(2);
-    %     scatter(datacond3(:,3), datacond3(:,5))
-    %     plot(x,y)
-    %     hold off
-    %     title(['S' SID ' M' elec ' Condition 3 - Both PW and freq varying together'])
-    %     xlabel('PW (us)')
-    %     ylabel('Perceived magnitude')
-    
-    %     figure
-    %     scatter(datacond3(:,3), datacond3(:,2))
-    %     title(['S' SID ' M' elec ' Frequency and PW for condition 3'])
-    %     xlabel('PW (us)')
-    %     ylabel('Frequency (Hz)')
-    
+   
+    %put the sorted data back into one variable - to make passing around
+    %easier
     sorted.datacond1=datacond1;
     sorted.datacond2=datacond2;
     sorted.datacond3=datacond3;
-    for i=1:3
+    
+    %loop through the conditions
+    for i=1:3 %there are 3 different conditions
         
         %find rows where the stim parameters change
         if i==2
@@ -152,14 +107,7 @@ for k=1:length(datafiles)
         %and standard deviations and save to avgs
         for j=2:length(ind_delta)+1
             if j==length(ind_delta)+1
-                
-                %                 if i==2
-                %                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,2);
-                %                 else
-                %                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,3);
-                %                 end
-                
-                
+               
                 %freq
                 avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(end,2);
                 %pw
@@ -170,11 +118,7 @@ for k=1:length(datafiles)
                 avgs.(['cond' num2str(i)])(j-1,4)=std(sorted.(['datacond' num2str(i)])(ind_delta(j-1)+1:end,5))/sqrt((ind_delta(end)-ind_delta(j-1)+1));
                 
             else
-                %                 if i==2
-                %                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),2);
-                %                 else
-                %                     avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),3);
-                %                 end
+                              
                 %freq
                 avgs.(['cond' num2str(i)])(j-1,1)=sorted.(['datacond' num2str(i)])(ind_delta(j),2);
                 %pw
@@ -209,12 +153,13 @@ for k=1:length(datafiles)
         %         saveas(f,['S' SID 'M' elec 'cond' num2str(i) '.tif'])
         cd(pathName)
         
+        %add information to the summdata matrix - for statistics later
         m=size(avgs.(['cond' num2str(i)]),1);
         summdata(q:q+m-1,1)=str2num(SID);
         summdata(q:q+m-1,2)=str2num(elec);
         summdata(q:q+m-1,3)=i;
         summdata(q:q+m-1,4:7)=avgs.(['cond' num2str(i)]);
-        q=q+m;
+        q=q+m; %iterate
     end
     
     alldata.(expname).avgs=avgs;
@@ -225,133 +170,249 @@ for k=1:length(datafiles)
     p=zeros(1,4);
     R2=0;
     
+    %loop through the conditions
     for i=1:3
+        %initialize the different options that could be used for x and y
         ydataraw=alldata.(expname).avgs.(['cond' num2str(i)])(:,3);
         ydata=ydataraw-ydataraw(1);
         xdataf=alldata.(expname).avgs.(['cond' num2str(i)])(:,1);
         xdatapw=alldata.(expname).avgs.(['cond' num2str(i)])(:,2);
+        
         %conditions 1 and 3 - fit models with PW varying
-        if i==1 || i==3%pw only
-            xdata=xdatapw-xdatapw(1);
+        if i==1 %|| i==3 %pw
+            xdata=100*(xdatapw-xdatapw(1))/(xdatapw(end)-xdatapw(1)); %x as a percentage of the PW range
+            runs=1;
+            type=2;
+        elseif i==2
+            xdata=xdataf-xdataf(1);
+            runs=1;
+            type=1;
+        elseif i==3
+            xdata=100*(xdatapw-xdatapw(1))/(xdatapw(end)-xdatapw(1));
+            runs=2;
+            type=2;
+        end
+        for s=1:runs %because cond 3 has two options for curve fitting - either vs PW or vs PF
+            if s==2
+                xdata=xdataf-xdataf(1);
+                type=1;
+            end
+            %initialzie MSE
             MSE=inf;
-            p=[];
-            for k=1:30
-                try
-                    th1=rand()*2000-1000; %y int
+            p=[]; %initialzie
+            
+            %try to fit the curve 30 times, will save out the best fit
+            %(lowest MSE)
+            for t=1:30
+                try %in case there's an error
+                    
+                    %Initial guesses:
+                    th1=rand()*100-90; %y int
                     th2=rand()*50; %coeff
                     th3=rand(); %power
-                    th4=rand()*20; %x offset
+                    th4=rand()*10-10; %x offset
                     
                     thIN=[th1 th2 th3 th4]; %vector of theta estimates, to put in lsqcurvefit
+                    lb=[-300 0 0 -200];
+                    ub=[inf inf inf 10];
                     
-                    
+                    %Use lsqcurvefit - because can set upper and lower
+                    %bounds (NonLineaModel.fit can't do this)
+                    %fitting to a power function:
                     F=@(p,xdata) (p(1)+ (p(2).*(xdata-p(4)).^p(3)).*heaviside(xdata-p(4)));
-%                     [x,resnorm,residual,exitflag,output,lambda]=lsqcurvefit(F,thIN,xdata,ydata,lb,ub);
-                    fitmdl=NonLinearModel.fit(xdata,ydata,F,thIN);
-                    if fitmdl.MSE< MSE;
-                        alldata.(expname).mdl.(['cond' num2str(i)]).PW=fitmdl;
-                        temp=dataset2cell(fitmdl.Coefficients(:,1));
-                        p=cell2mat(temp(2:end,2));
-                        MSE=fitmdl.MSE;
-                        R2=fitmdl.Rsquared.Adjusted;
-                        alldata.(expname).mdl.(['cond' num2str(i)]).PWdata.ydata=ydata+ydataraw(1);
-                        alldata.(expname).mdl.(['cond' num2str(i)]).PWdata.xdata=xdata+xdatapw(1);
+                    options=optimoptions(@lsqcurvefit,'MaxIter',1000);
+                    [thOUT,resnorm,residual,flag]=lsqcurvefit(F,thIN,xdata,ydata,lb,ub,options);
+                    %                     fitmdl=NonLinearModel.fit(xdata,ydata,F,thIN);
+                    
+                    %if this is a better fit than all the rest, save out
+                    %the params
+                    if mean(residual)< MSE;
+                        p=thOUT;
+                        MSE=mean(residual);
+                        exitflag=flag;
+%                         alldata.(expname).mdl.(['cond' num2str(i)]).PWdata.ydata=ydata+ydataraw(1);
+%                         alldata.(expname).mdl.(['cond' num2str(i)]).PWdata.xdata=xdata+xdatapw(1);
                     end
                 catch
                 end
                 
             end
+            %Save pertinent data to summary_data matrix - for later
+            %analysis
             summary_data(w,1)=str2num(SID);
             summary_data(w,2)=str2num(expdate);
             summary_data(w,3)=str2num(elec);
             %     summary_data(w,4)=str2num(datestr(datevec(datafiles{k}(11:end-4),'yyyy-mm-dd T HH.MM.SSPM'),'yyyymmddHHMMSS'));
             summary_data(w,5)=i;
-            summary_data(w,6)=2; %fit model with PW
+            summary_data(w,6)=type; %fit model with freq(1) or PW(2)
             
             summary_data(w,7:10)=p';
             summary_data(w,12)=MSE;
+            summary_data(w,13)=exitflag;
+            
+            %calculating Rsquared
+            ybar=mean(ydata);
+            fi=(p(1)+ (p(2).*(xdata-p(4)).^p(3)).*heaviside(xdata-p(4)));
+            SStot=sum((ydata-ybar).^2);
+            SSres=sum((ydata-fi).^2);
+            R2=1-(SSres/SStot);
             summary_data(w,11)=R2;
+            
+            %iterate through summary_data
             w=w+1;
             
-            %                 xfit=[0:0.01:300];
-            xfit=[0:0.01:300];
-             %add back in values
-            p(1)=p(1)+ydataraw(1);
-            p(4)=p(4)+xdatapw(1);
-            yfit=(p(1)+ (p(2).*(xfit-p(4)).^p(3)).*heaviside(xfit-p(4)));
-            figure
-            hold on
-            scatter(xdata+xdatapw(1),ydata+ydataraw(1))
-            %             errorbar(avgs.(['cond' num2str(i)])(:,2),avgs.(['cond' num2str(i)])(:,3), avgs.(['cond' num2str(i)])(:,4),'o','Color','r','LineWidth',2);
-            plot(xfit,yfit)
-            title([SID ' M' elec ' cond' num2str(i)])
-            axis([0 300 0 100])
-            xlabel('PW (/mus)')
-            ylabel('Perceived magnitude (%)')
-            hold off
-        end
-        %conditions 2 and 3 - fit models with F varying
-        if i==2 || i==3 %f only
-            xdata=xdataf-xdataf(1);
-            MSE=inf;
-            p=[];
-            for k=1:30
-                try
-                    th1=rand()*1000-2000; %y int
-                    th2=rand()*50; %coeff
-                    th3=rand(); %power
-                    th4=rand()*20; %x offset
-                    
-                    thIN=[th1 th2 th3 th4]; %vector of theta estimates, to put in lsqcurvefit
-                    
-                    
-                    F=@(p,xdata) (p(1)+ (p(2).*(xdata-p(4)).^p(3)).*heaviside(xdata-p(4)));
-                    fitmdl=NonLinearModel.fit(xdata,ydata,F,thIN);
-                    if fitmdl.MSE< MSE;
-                        alldata.(expname).mdl.(['cond' num2str(i)]).PF=fitmdl;
-                        temp=dataset2cell(fitmdl.Coefficients(:,1));
-                        p=cell2mat(temp(2:end,2));
-                        MSE=fitmdl.MSE;
-                        R2=fitmdl.Rsquared.Adjusted;
-                        alldata.(expname).mdl.(['cond' num2str(i)]).PFdata.ydata=ydata+ydataraw(1);
-                        alldata.(expname).mdl.(['cond' num2str(i)]).PFdata.xdata=xdata+xdataf(1);
-                    end
-                catch
-                end
-            end
-            summary_data(w,1)=str2num(SID);
-            summary_data(w,2)=str2num(expdate);
-            summary_data(w,3)=str2num(elec);
-            %     summary_data(w,4)=str2num(datestr(datevec(datafiles{k}(11:end-4),'yyyy-mm-dd T HH.MM.SSPM'),'yyyymmddHHMMSS'));
-            summary_data(w,5)=i;
-            summary_data(w,6)=1; %fit model with PF
-            
-            
-            summary_data(w,7:10)=p';
-            summary_data(w,12)=MSE;
-            summary_data(w,11)=R2;
-            w=w+1;
-            
+            %Plotting
             xfit=[0:0.01:300];
             %add back in values
             p(1)=p(1)+ydataraw(1);
-            p(4)=p(4)+xdataf(1);
-            yfit=(p(1)+ (p(2).*(xfit-p(4)).^p(3)).*heaviside(xfit-p(4)));
+            
+            %plot in one figure
+            if i==1
+                axes(h1)
+                hold on
+                hLine=scatter(xdata,ydata+ydataraw(1),50,col(k,:));
+            elseif i==2
+                axes(h2)
+                hold on
+                p(4)=p(4)+xdataf(1);
+                hLine=scatter(xdata+xdataf(1),ydata+ydataraw(1),50,col(k,:));
+            else
+                if s==1
+                    axes(h3)
+                    hold on
+                    hLine=scatter(xdata,ydata+ydataraw(1),50,col(k,:));
+                else
+                    axes(h4)
+                    hold on
+                    p(4)=p(4)+xdataf(1);
+                    hLine=scatter(xdata+xdataf(1),ydata+ydataraw(1),50,col(k,:));
+                end
+            end
+                set(get(get(hLine,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+                yfit=(p(1)+ (p(2).*(xfit-p(4)).^p(3)).*heaviside(xfit-p(4)));
+                plot(xfit,yfit,'Color',col(k,:),'LineWidth',2)
+                hold off
+                
+                %set up legend
+                leg{1,k}=[SID ' M' elec];
+                
+             %Also plot individually   
             figure
             hold on
-            scatter(xdata+xdataf(1),ydata+ydataraw(1))
-            %                 errorbar(avgs.(['cond' num2str(i)])(:,1),avgs.(['cond' num2str(i)])(:,3), avgs.(['cond' num2str(i)])(:,4),'o','Color','r','LineWidth',2);
+            
+            if i==2 || s==2
+                scatter(xdata+xdataf(1),ydata+ydataraw(1))
+                xlabel('Frequency (Hz)','FontSize',14)
+            else
+                p(4)=p(4)+xdatapw(1);
+                scatter(xdata+xdatapw(1),ydata+ydataraw(1))
+                xlabel('PW (\mus)','FontSize',14)
+            end
+            yfit=(p(1)+ (p(2).*(xfit-p(4)).^p(3)).*heaviside(xfit-p(4)));
+            
+            
+            %             errorbar(avgs.(['cond' num2str(i)])(:,2),avgs.(['cond' num2str(i)])(:,3), avgs.(['cond' num2str(i)])(:,4),'o','Color','r','LineWidth',2);
             plot(xfit,yfit)
+            text(200,50,['Rsq=' num2str(R2,'%1.2f')]);
+            text(200,55,['y=' num2str(p(1),'%1.2f') '+' num2str(p(2),'%1.2f') '*(x-' num2str(p(4),'%1.2f') ')^(' num2str(p(3),'%1.2f') ')'])
             title([SID ' M' elec ' cond' num2str(i)])
             axis([0 300 0 100])
-            xlabel('Frequency (Hz)')
-            ylabel('Perceived magnitude')
+            
+            ylabel('Perceived magnitude (%)')
             hold off
+            
+            %sort data for bar plots
+            bar_power(k,i+s-1)=p(3);
         end
     end
+    %d power - stores increase in the fitted power param, col 1 = PW, col2
+    %= freq
+    dpower(k,1)=bar_power(k,3)-bar_power(k,1); %pw only vs pw*freq(pw)
+    dpower(k,2)=bar_power(k,4)-bar_power(k,2); %freq only vs pw*freq(freq)
+    dpower(k,3)=bar_power(k,1)-bar_power(k,2); %pw only vs freq only
     
 end
 
+
+%fix plot labels
+xlabel(h1,'PW (%PWrange)','FontSize',14)
+xlabel(h2,'Frequency (Hz)','FontSize',14)
+xlabel(h3,'PW (%PWrange','FontSize',14)
+xlabel(h4,'Frequency (Hz)','FontSize',14)
+ylabel(h1,'Perceived magnitude (%)','FontSize',14)
+ylabel(h2,'Perceived magnitude (%)','FontSize',14)
+ylabel(h3,'Perceived magnitude (%)','FontSize',14)
+ylabel(h4,'Perceived magnitude (%)','FontSize',14)
+axis(h1,[0 100 0 100])
+axis(h2,[0 200 0 100])
+axis(h3,[0 100 0 100])
+axis(h4,[0 200 0 100])
+legend(h4,leg,'Boxoff','Location','SouthEast')
+
+%% Bar plots
+
+%find mean and std dev for 1) power param, 2) change in power due to PW*PF
+%cross or comparison between PF and PW
+mbar_power=mean(bar_power);
+mdpower=mean(dpower);
+sdbar_power=std(bar_power);
+sddpower=std(dpower);
+
+%Bar plot for power
+f=figure;
+h=axes('Parent',f);
+hold on
+for i=1:4
+    x=[];
+    y=[];
+    t=length(bar_power(:,i));
+    if rem(t,2)==0 %even num
+        x=[i-(t/2)*0.05+0.025:0.05:i+0.05*(t/2)-0.025];
+    else %odd num
+        x=[i-floor(t/2)*0.05:0.05:i+0.05*floor(t/2)];
+    end
+    y=bar_power(:,i);
+    scatter(x,y,70,col(i,:),'fill')
+    bar(i,mbar_power(:,i),'FaceColor','none','EdgeColor',col(i,:),'LineWidth',3)
+end
+
+barlab={'','PW only','','PF only','','PW and PF','','PW and PF'};
+set(gca,'XTickLabel',barlab,'FontSize',14);
+errorbar(mbar_power, sdbar_power,'.','Color','k','LineWidth',2);
+xlabel({'';'Discrimination Condition'},'FontSize',14)
+ylabel('Power Parameter', 'FontSize', 14)
+% title('Sensation Intensity JND','FontSize',14)
+hold off
+
+
+%Bar plot for power increase
+f=figure;
+dh=axes('Parent',f);
+hold on
+for i=1:3
+    x=[];
+    y=[];
+    t=length(dpower(:,i));
+    if rem(t,2)==0 %even num
+        x=[i-(t/2)*0.05+0.025:0.05:i+0.05*(t/2)-0.025];
+    else %odd num
+        x=[i-floor(t/2)*0.05:0.05:i+0.05*floor(t/2)];
+    end
+    y=dpower(:,i);
+    scatter(x,y,70,col(i,:),'fill')
+    bar(i,mdpower(:,i),'FaceColor','none','EdgeColor',col(i,:),'LineWidth',3)
+end
+
+barlab={'','PW*PF-PW','','PW*PF-PF','','PW-PF'};
+set(gca,'XTickLabel',barlab,'FontSize',14);
+errorbar(mdpower, sddpower,'.','Color','k','LineWidth',2);
+xlabel({'';'Discrimination Condition'},'FontSize',14)
+ylabel('Power Parameter', 'FontSize', 14)
+
+%save adata and figures out
 cd(outdir)
-save(['Analysis' datestr(now,'yyyymmddHHMMSS') '.mat'],'alldata')
+save(['Analysis' datestr(now,'yyyymmddHHMMSS') '.mat'],'alldata','summary_data')
+saveas(h,'magnEst_powerbar.tif')
+saveas(dh,'magnEst_dpower.tif')
+print(spf,'-dtiff','magnEst_all')
 cd(defaultdir)
